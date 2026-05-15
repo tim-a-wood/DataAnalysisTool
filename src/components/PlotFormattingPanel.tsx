@@ -50,7 +50,6 @@ export function PlotFormattingPanel() {
           <AppTooltip content={tooltipContent.plotFormatting}>
             <span className="sidebar-section-title">Plot Formatting</span>
           </AppTooltip>
-          <span className="sidebar-section-label">Configurable</span>
         </div>
       </div>
 

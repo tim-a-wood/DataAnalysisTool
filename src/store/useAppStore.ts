@@ -40,6 +40,9 @@ interface AppState {
   setHoveredCaseRawX: (rawX: number | null) => void;
   setReferenceCase: (c: number | null) => void;
   setXRange: (range: [number, number]) => void;
+  setFocusedPane: (pane: AppLayoutState["focusedPane"]) => void;
+  toggleLeftPanel: () => void;
+  toggleRightPanel: () => void;
   setZoomBySlider: (v: number) => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -183,13 +186,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+  setFocusedPane: (pane) => {
+    set(s => ({ layoutState: { ...s.layoutState, focusedPane: pane } }));
+  },
+
+  toggleLeftPanel: () => {
+    set(s => ({ layoutState: { ...s.layoutState, leftPanelCollapsed: !s.layoutState.leftPanelCollapsed } }));
+    scheduleAutosave(get);
+  },
+
+  toggleRightPanel: () => {
+    set(s => ({ layoutState: { ...s.layoutState, rightPanelCollapsed: !s.layoutState.rightPanelCollapsed } }));
+    scheduleAutosave(get);
+  },
+
   setZoomBySlider: (v) => {
     const s = get();
     const cases = getAllCases(s.workbookModel.rows);
     if (cases.length === 0) return;
     const fw = getFullWindow(s.workbookModel);
     const span = computeWindowSpanFromSlider(v, fw);
-    const center = s.layoutState.selectedCase ?? cases[Math.floor(cases.length/2)];
+    const center = s.layoutState.xRange
+      ? (s.layoutState.xRange[0] + s.layoutState.xRange[1]) / 2
+      : (s.layoutState.selectedCase ?? cases[Math.floor(cases.length/2)]);
     const xRange = clampXRange(center, span, cases[0], cases[cases.length-1]);
     set(prev => ({ layoutState: { ...prev.layoutState, xRange, currentWindowSpan: span, zoomSliderValue: v } }));
     scheduleAutosave(get);

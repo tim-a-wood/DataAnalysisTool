@@ -89,7 +89,7 @@
 .toggle-root.disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 
 /* ─── X-axis nav ─── */
-.x-axis-nav { height: 56px; display: flex; align-items: center; gap: 5px; padding: 0 10px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--panel); font-size: 12px; }
+.x-axis-nav { height: 56px; display: flex; align-items: center; gap: 5px; padding: 0 10px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--panel); font-size: 12px; overflow-x: auto; }
 .overview-brush-container { width: 200px; height: 38px; flex-shrink: 0; }
 .x-range-chip { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; font-family: var(--font-mono); font-size: 10px; color: var(--text-1); white-space: nowrap; }
 
@@ -101,6 +101,25 @@
 /* ─── Plot workspace ─── */
 .plot-workspace { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 .stacked-plots { flex: 1; overflow: hidden; min-height: 0; position: relative; }
+.pane-action {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 20;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel-raised);
+  color: var(--text-1);
+  cursor: pointer;
+  box-shadow: var(--shadow-panel);
+}
+.pane-action:hover { background: var(--bg-2); color: var(--text-0); }
+.pane-action:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* ─── Modal ─── */
 .modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(7,13,19,0.75); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }

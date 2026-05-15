@@ -22,7 +22,6 @@ export function DataGroupsPanel() {
     <div style={{ flexShrink: 0 }}>
       <div className="sidebar-section-header">
         DATA GROUPS
-        <span className="sidebar-section-label">configurable</span>
       </div>
       <AppTooltip content={tooltipContent.dataGroups}>
         <div>

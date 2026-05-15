@@ -18,9 +18,27 @@ body {
   overflow: hidden;
 }
 
+.app.left-collapsed { grid-template-columns: 0 1fr 260px; }
+.app.right-collapsed { grid-template-columns: 260px 1fr 0; }
+.app.left-collapsed.right-collapsed,
+.app.focus-table,
+.app.focus-plots { grid-template-columns: 0 1fr 0; }
+
 .app-header { grid-column: 1/4; grid-row: 1; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: center; }
 .app-left-sidebar { grid-column: 1; grid-row: 2/4; border-right: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; background: var(--panel); }
-.app-table { grid-column: 2; grid-row: 2; overflow: hidden; border-bottom: 1px solid var(--border); }
-.app-plots { grid-column: 2; grid-row: 3; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-1); }
+.app-table { grid-column: 2; grid-row: 2; overflow: hidden; border-bottom: 1px solid var(--border); position: relative; }
+.app-plots { grid-column: 2; grid-row: 3; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-1); position: relative; }
 .app-right-inspector { grid-column: 3; grid-row: 2/4; border-left: 1px solid var(--border); overflow-y: auto; background: var(--panel); }
 .app-bottom-status { grid-column: 1/4; grid-row: 4; border-top: 1px solid var(--border); background: var(--panel); }
+
+.app.left-collapsed .app-left-sidebar,
+.app.right-collapsed .app-right-inspector,
+.app.focus-table .app-left-sidebar,
+.app.focus-table .app-right-inspector,
+.app.focus-table .app-plots,
+.app.focus-plots .app-left-sidebar,
+.app.focus-plots .app-right-inspector,
+.app.focus-plots .app-table { display: none; }
+
+.app.focus-table .app-table,
+.app.focus-plots .app-plots { grid-column: 2; grid-row: 2/4; }

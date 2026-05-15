@@ -58,6 +58,9 @@ export interface PlotSet {
 }
 
 export interface AppLayoutState {
+  leftPanelCollapsed: boolean;
+  rightPanelCollapsed: boolean;
+  focusedPane: "table" | "plots" | null;
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];
   collapsedGroupKeys: string[];

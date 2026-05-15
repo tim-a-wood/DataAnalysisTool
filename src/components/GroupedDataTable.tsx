@@ -86,7 +86,7 @@ export function GroupedDataTable() {
                 className="group-header"
                 colSpan={g.colCount}
                 style={{
-                  background: hexToRgba(g.groupColor, 0.18),
+                  background: g.groupKey === "_case" ? "var(--bg-2)" : `linear-gradient(0deg, ${hexToRgba(g.groupColor, 0.16)}, ${hexToRgba(g.groupColor, 0.16)}), var(--bg-2)`,
                   borderBottom: `2px solid ${hexToRgba(g.groupColor, 0.55)}`,
                 }}
               >

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Zap, Upload, Save, Settings, HelpCircle } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Zap, Upload, Save, Settings, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { parseWorkbookFile } from '../xlsx/parseWorkbook';
 import { formatDisplayTime } from '../utils/format';
@@ -15,6 +15,9 @@ interface Props {
 export function Header({ onOpenSettings, onOpenHelp }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { workbookModel, setIsLoading, loadWorkbook, showError, saveLayout } = useAppStore();
+  const layoutState = useAppStore(s => s.layoutState);
+  const toggleLeftPanel = useAppStore(s => s.toggleLeftPanel);
+  const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,6 +31,7 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
   };
 
   const loadedAt = workbookModel.isSample ? null : new Date(workbookModel.loadedAtIso);
+  const subtitle = workbookModel.isSample ? 'Sample workbook' : 'Loaded XLSX workbook';
 
   return (
     <div className="header-inner">
@@ -36,7 +40,7 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
           <Zap size={15} color="var(--blue)" />
           <span>SignalLite Analyzer</span>
         </div>
-        <div className="logo-sub">Aircraft Performance · FAR25.121 / FAR25.367</div>
+        <div className="logo-sub">{subtitle}</div>
       </div>
 
       <div className="logo-divider" />
@@ -63,6 +67,16 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
         </button>
       </AppTooltip>
       <ExportMenu />
+      <AppTooltip content={layoutState.leftPanelCollapsed ? 'Show left panels' : 'Hide left panels'}>
+        <button className="btn btn-icon" onClick={toggleLeftPanel} aria-label={layoutState.leftPanelCollapsed ? 'Show left panels' : 'Hide left panels'}>
+          {layoutState.leftPanelCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+        </button>
+      </AppTooltip>
+      <AppTooltip content={layoutState.rightPanelCollapsed ? 'Show plot formatting panel' : 'Hide plot formatting panel'}>
+        <button className="btn btn-icon" onClick={toggleRightPanel} aria-label={layoutState.rightPanelCollapsed ? 'Show plot formatting panel' : 'Hide plot formatting panel'}>
+          {layoutState.rightPanelCollapsed ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
+        </button>
+      </AppTooltip>
       <AppTooltip content={tooltipContent.settings}>
         <button className="btn btn-icon" onClick={onOpenSettings}><Settings size={14} /></button>
       </AppTooltip>

@@ -11,9 +11,9 @@ import { hexToRgba } from "../utils/color";
 const LINE_STYLE_MAP: Record<string, string> = { solid: "solid", dashed: "dashed", dotted: "dotted" };
 
 const GRIDS = [
-  { top: "6%", height: "24%", left: "8%", right: "15%" },
-  { top: "37%", height: "24%", left: "8%", right: "15%" },
-  { top: "68%", height: "24%", left: "8%", right: "15%" },
+  { top: "8%", height: "22%", left: "9%", right: "17%" },
+  { top: "39%", height: "22%", left: "9%", right: "17%" },
+  { top: "70%", height: "22%", left: "9%", right: "17%" },
 ];
 
 export function StackedPlots() {
@@ -67,8 +67,8 @@ export function StackedPlots() {
     const axisBase = {
       type: "value",
       axisLine: { lineStyle: { color: "rgba(32,50,66,0.8)" } },
-      splitLine: { lineStyle: { color: "rgba(32,50,66,0.5)" } },
-      axisLabel: { color: "#8797a7", fontSize: 10, fontFamily: "JetBrains Mono, monospace" },
+      splitLine: { lineStyle: { color: "rgba(74,100,120,0.48)" } },
+      axisLabel: { color: "#9bb0c2", fontSize: 10, fontFamily: "JetBrains Mono, monospace", margin: 8, hideOverlap: true },
       axisTick: { lineStyle: { color: "rgba(32,50,66,0.8)" } },
     };
 
@@ -78,8 +78,8 @@ export function StackedPlots() {
         gridIndex: pi,
         min: minCase,
         max: maxCase,
-        splitLine: { show: showXGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.5)" } },
-        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.25)" } },
+        splitLine: { show: showXGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.55)" } },
+        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.28)" } },
         axisPointer: { snap: true },
       });
 
@@ -93,9 +93,11 @@ export function StackedPlots() {
         ...axisBase,
         gridIndex: pi,
         name: plot.leftAxisLabel,
-        nameTextStyle: { color: "#8797a7", fontSize: 9 },
-        splitLine: { show: showYGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.5)" } },
-        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.25)" } },
+        nameLocation: "end",
+        nameGap: 16,
+        nameTextStyle: { color: "#9bb0c2", fontSize: 9, align: "right", padding: [0, 8, 0, 0] },
+        splitLine: { show: showYGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.55)" } },
+        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.28)" } },
       });
 
       // Right Y axis
@@ -103,7 +105,9 @@ export function StackedPlots() {
         ...axisBase,
         gridIndex: pi,
         name: plot.rightAxisLabel ?? "",
-        nameTextStyle: { color: "#8797a7", fontSize: 9 },
+        nameLocation: "end",
+        nameGap: 16,
+        nameTextStyle: { color: "#9bb0c2", fontSize: 9, align: "left", padding: [0, 0, 0, 8] },
         splitLine: { show: false },
         position: "right",
       });
@@ -169,7 +173,7 @@ export function StackedPlots() {
         legends.push({
           data: legendData,
           orient: "vertical",
-          right: "2%",
+          right: "2.5%",
           top: GRIDS[pi]?.top ?? "6%",
           backgroundColor: hexToRgba("#0a121a", 0.7),
           padding: [4, 8],
