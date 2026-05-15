@@ -6,7 +6,7 @@
   "properties": {
     "Data": {
       "type": "array",
-      "description": "Required worksheet. Row 1 contains column headers. Each subsequent row is one case.",
+      "description": "Required worksheet. Either row 1 contains machine-readable VariableKey headers, or row 1 contains visual group names and row 2 contains machine-readable VariableKey headers. Each subsequent row is one case.",
       "minItems": 1,
       "items": {
         "type": "object",
@@ -60,6 +60,11 @@
     "maxFileSizeBytes": 20971520,
     "requiredSheets": ["Data"],
     "optionalSheets": ["Groups", "Variables"],
+    "groupingModel": "Groups are defined in the Groups worksheet. Variables are mapped to groups by Variables.GroupKey. Data columns are displayed under those groups when Data headers match Variables.VariableKey.",
+    "dataSheetHeaderRows": {
+      "ungrouped": "Row 1 contains VariableKey headers including Case.",
+      "groupedTemplate": "Row 1 may contain visual group labels; row 2 must contain VariableKey headers including Case. Visual group labels are for spreadsheet readability only; app grouping comes from Variables.GroupKey."
+    },
     "dataSheetRequiredColumns": ["Case"],
     "groupsSheetColumns": ["GroupKey", "DisplayName", "Color", "SortOrder", "DefaultVisible"],
     "variablesSheetColumns": ["VariableKey", "DisplayName", "GroupKey", "Unit", "DataType", "SortOrder", "DefaultVisible", "Source"]

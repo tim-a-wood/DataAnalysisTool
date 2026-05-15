@@ -33,15 +33,15 @@ function cellToHeader(value: ExcelJS.CellValue): string {
   return parsed === null ? "" : String(parsed).trim();
 }
 
-function sheetToRows(sheet: ExcelJS.Worksheet): { headers: string[]; rows: ParsedSheetRow[] } {
-  const headerRow = sheet.getRow(1);
+function sheetToRows(sheet: ExcelJS.Worksheet, headerRowNumber = 1): { headers: string[]; rows: ParsedSheetRow[] } {
+  const headerRow = sheet.getRow(headerRowNumber);
   const headers: string[] = [];
   headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
     headers[colNumber - 1] = cellToHeader(cell.value);
   });
 
   const rows: ParsedSheetRow[] = [];
-  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
+  for (let rowNumber = headerRowNumber + 1; rowNumber <= sheet.rowCount; rowNumber += 1) {
     const row = sheet.getRow(rowNumber);
     const parsed: ParsedSheetRow = {};
     let hasValue = false;
@@ -55,6 +55,12 @@ function sheetToRows(sheet: ExcelJS.Worksheet): { headers: string[]; rows: Parse
   }
 
   return { headers: headers.filter(Boolean), rows };
+}
+
+function hasGroupedDataHeader(sheet: ExcelJS.Worksheet): boolean {
+  const row1Headers = sheetToRows(sheet, 1).headers;
+  const row2Headers = sheetToRows(sheet, 2).headers;
+  return !row1Headers.includes("Case") && row2Headers.includes("Case");
 }
 
 export async function parseWorkbookFile(file: File): Promise<ParseResult> {
@@ -74,7 +80,8 @@ export async function parseWorkbookFile(file: File): Promise<ParseResult> {
     return { model: null, errors: ["Workbook must contain a Data sheet."] };
   }
 
-  const { headers: allHeaders, rows: rawRows } = sheetToRows(dataSheet);
+  const dataHeaderRowNumber = hasGroupedDataHeader(dataSheet) ? 2 : 1;
+  const { headers: allHeaders, rows: rawRows } = sheetToRows(dataSheet, dataHeaderRowNumber);
 
   const dataErrors = validateDataSheet(allHeaders, rawRows);
   if (dataErrors.length > 0) return { model: null, errors: dataErrors };

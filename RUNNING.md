@@ -53,4 +53,4 @@ http://127.0.0.1:5173/
 
 Use `templates/dataset-analyzer-template.xlsx` as the starting point for new workbooks.
 
-The import contract is documented in `templates/dataset-analyzer-schema.json`. Workbooks must include a `Data` worksheet with a `Case` column. Optional `Groups` and `Variables` worksheets control grouping, labels, units, data types, and default visibility.
+The import contract is documented in `templates/dataset-analyzer-schema.json`. Workbooks must include a `Data` worksheet with a `Case` column. `Groups` and `Variables` worksheets control grouping, labels, units, data types, order, and default visibility. The template uses row 1 in `Data` as visual group headers and row 2 as the machine-readable variable headers.
