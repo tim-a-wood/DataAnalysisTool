@@ -116,6 +116,7 @@ export function StackedPlots() {
 
       plot.series.forEach((s, si) => {
         if (!s.visible) return;
+        const plotMode = s.plotMode ?? "line";
         const seriesData = rows.map(row => {
           const x = row["Case"];
           const y = row[s.variableKey];
@@ -135,13 +136,14 @@ export function StackedPlots() {
         } : undefined;
 
         seriesList.push({
-          type: "line",
+          type: plotMode === "samples" ? "scatter" : "line",
           name: s.label,
           data: seriesData,
           xAxisIndex: pi,
           yAxisIndex,
           smooth: false,
-          symbol: "none",
+          symbol: plotMode === "samples" ? "circle" : "none",
+          symbolSize: plotMode === "samples" ? Math.max(4, s.width + 3) : 0,
           lineStyle: {
             color: s.color,
             type: LINE_STYLE_MAP[s.lineStyle] as string,

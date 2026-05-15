@@ -1,4 +1,5 @@
 import React from "react";
+import { PanelRightClose } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
 import { Toggle } from "./Toggle";
 import { Select } from "./Select";
@@ -6,6 +7,8 @@ import { ColorSwatch } from "./ColorSwatch";
 import { Button } from "./Button";
 import { AppTooltip } from "./AppTooltip";
 import { tooltipContent } from "../config/tooltipContent";
+import { getOrderedGroups, getVariablesForGroup } from "../model/selectors";
+import type { SeriesConfig, VariableDefinition } from "../types/appTypes";
 
 const LINE_STYLE_OPTIONS = [
   { value: "solid", label: "Solid" },
@@ -24,6 +27,11 @@ const AXIS_OPTIONS = [
   { value: "right", label: "Right" },
 ];
 
+const PLOT_MODE_OPTIONS = [
+  { value: "line", label: "Line" },
+  { value: "samples", label: "Samples" },
+];
+
 const GRID_STYLE_OPTIONS = [
   { value: "solid", label: "Solid" },
   { value: "dashed", label: "Dashed" },
@@ -31,9 +39,11 @@ const GRID_STYLE_OPTIONS = [
 ];
 
 export function PlotFormattingPanel() {
+  const workbookModel = useAppStore(s => s.workbookModel);
   const plotSet = useAppStore(s => s.plotSet);
   const layoutState = useAppStore(s => s.layoutState);
   const updateSeriesConfig = useAppStore(s => s.updateSeriesConfig);
+  const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
   const setGridConfig = useAppStore(s => s.setGridConfig);
   const setCursorConfig = useAppStore(s => s.setCursorConfig);
   const resetView = useAppStore(s => s.resetView);
@@ -43,12 +53,35 @@ export function PlotFormattingPanel() {
     showCrosshair, snapToData, showTooltips,
   } = layoutState;
 
+  const seriesByVariableKey = React.useMemo(() => {
+    return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.variableKey, series])));
+  }, [plotSet]);
+
+  const groupedSeries = React.useMemo(() => {
+    return getOrderedGroups(workbookModel.groups, layoutState.groupOrderKeys)
+      .map(group => {
+        const variables: { variable: VariableDefinition; series: SeriesConfig }[] = [];
+        for (const variable of getVariablesForGroup(workbookModel.variables, group.groupKey)) {
+          if (variable.variableKey === "Case" || variable.dataType !== "number") continue;
+          const series = seriesByVariableKey.get(variable.variableKey);
+          if (series) variables.push({ variable, series });
+        }
+        return { group, variables };
+      })
+      .filter(group => group.variables.length > 0);
+  }, [workbookModel, layoutState.groupOrderKeys, seriesByVariableKey]);
+
   return (
     <div className="plot-panel">
       <div className="plot-panel-section">
         <div className="sidebar-section-header" style={{ padding: "8px 0 4px" }}>
           <AppTooltip content={tooltipContent.plotFormatting}>
             <span className="sidebar-section-title">Plot Formatting</span>
+          </AppTooltip>
+          <AppTooltip content="Hide plot formatting panel">
+            <button className="panel-local-toggle" onClick={toggleRightPanel} aria-label="Hide plot formatting panel">
+              <PanelRightClose size={13} />
+            </button>
           </AppTooltip>
         </div>
       </div>
@@ -64,11 +97,13 @@ export function PlotFormattingPanel() {
         />
       </div>
 
-      {/* Series per plot */}
-      {plotSet.plots.map(plot => (
-        <div key={plot.id} className="plot-panel-section">
-          <div className="plot-panel-section-title">{plot.title}</div>
-          {plot.series.map(s => (
+      {groupedSeries.map(({ group, variables }) => (
+        <div key={group.groupKey} className="plot-panel-section">
+          <div className="plot-panel-section-title series-group-title">
+            <span className="group-color-dot" style={{ background: group.color }} />
+            <span>{group.displayName}</span>
+          </div>
+          {variables.map(({ variable, series: s }) => (
             <div key={s.id} className="series-row">
               <div className="series-row-top">
                 <AppTooltip content={tooltipContent.seriesVisibility}>
@@ -79,17 +114,24 @@ export function PlotFormattingPanel() {
                     aria-label={`Toggle ${s.label}`}
                   />
                 </AppTooltip>
-                <span className="series-label" title={s.label}>{s.label}</span>
+                <span className="series-label" title={s.label}>{variable.displayName}</span>
+                <span className="series-unit">{variable.unit}</span>
               </div>
               <div className="series-row-bottom">
                 <AppTooltip content={tooltipContent.colorSwatch}>
                   <ColorSwatch color={s.color} onChange={color => updateSeriesConfig(s.id, { color })} />
                 </AppTooltip>
+                <Select
+                  value={s.plotMode ?? "line"}
+                  onChange={v => updateSeriesConfig(s.id, { plotMode: v as "line" | "samples" })}
+                  options={PLOT_MODE_OPTIONS}
+                />
                 <AppTooltip content={tooltipContent.lineStyle}>
                   <Select
                     value={s.lineStyle}
                     onChange={v => updateSeriesConfig(s.id, { lineStyle: v as "solid" | "dashed" | "dotted" })}
                     options={LINE_STYLE_OPTIONS}
+                    disabled={(s.plotMode ?? "line") === "samples"}
                   />
                 </AppTooltip>
                 <Select

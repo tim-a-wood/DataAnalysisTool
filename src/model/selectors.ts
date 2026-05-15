@@ -4,8 +4,18 @@ export function getSortedGroups(groups: DataGroup[]): DataGroup[] {
   return [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-export function getVisibleGroups(groups: DataGroup[], visibleGroupKeys: string[]): DataGroup[] {
-  return getSortedGroups(groups).filter(g => visibleGroupKeys.includes(g.groupKey));
+export function getOrderedGroups(groups: DataGroup[], groupOrderKeys: string[] = []): DataGroup[] {
+  const groupsByKey = new Map(groups.map(g => [g.groupKey, g]));
+  const ordered = groupOrderKeys
+    .map(key => groupsByKey.get(key))
+    .filter((g): g is DataGroup => Boolean(g));
+  const orderedKeys = new Set(ordered.map(g => g.groupKey));
+  const missing = getSortedGroups(groups).filter(g => !orderedKeys.has(g.groupKey));
+  return [...ordered, ...missing];
+}
+
+export function getVisibleGroups(groups: DataGroup[], visibleGroupKeys: string[], groupOrderKeys: string[] = []): DataGroup[] {
+  return getOrderedGroups(groups, groupOrderKeys).filter(g => visibleGroupKeys.includes(g.groupKey));
 }
 
 export function getVariablesForGroup(variables: VariableDefinition[], groupKey: string): VariableDefinition[] {

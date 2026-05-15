@@ -5,7 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { getEChartsInstance } from './echartsInstance';
 import { downloadBlob, downloadText } from '../utils/download';
 import { formatTimestamp, formatTableValue } from '../utils/format';
-import { getSortedGroups } from '../model/selectors';
+import { getOrderedGroups } from '../model/selectors';
 import { AppTooltip } from './AppTooltip';
 import { tooltipContent } from '../config/tooltipContent';
 
@@ -28,7 +28,7 @@ export function ExportMenu() {
   const ts = () => formatTimestamp(new Date());
 
   const exportTable = async () => {
-    const visibleGroups = getSortedGroups(workbookModel.groups)
+    const visibleGroups = getOrderedGroups(workbookModel.groups, layoutState.groupOrderKeys)
       .filter(g => layoutState.visibleGroupKeys.includes(g.groupKey));
     const allVisibleVarKeys: string[] = ['Case'];
     for (const grp of visibleGroups) {

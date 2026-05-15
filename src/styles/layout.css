@@ -16,6 +16,7 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .app.left-collapsed { grid-template-columns: 0 1fr 260px; }
@@ -42,3 +43,23 @@ body {
 
 .app.focus-table .app-table,
 .app.focus-plots .app-plots { grid-column: 2; grid-row: 2/4; }
+
+.panel-rail-toggle {
+  position: fixed;
+  top: 60px;
+  z-index: 30;
+  width: 28px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-raised);
+  color: var(--text-1);
+  cursor: pointer;
+  box-shadow: var(--shadow-panel);
+}
+.panel-rail-toggle:hover { background: var(--bg-2); color: var(--text-0); }
+.panel-rail-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.panel-rail-toggle-left { left: 0; border-left: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.panel-rail-toggle-right { right: 0; border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm); }

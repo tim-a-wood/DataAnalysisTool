@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useAppStore } from "../store/useAppStore";
-import { getSortedGroups } from "../model/selectors";
+import { getOrderedGroups } from "../model/selectors";
 import { AppTooltip } from "./AppTooltip";
 import { tooltipContent } from "../config/tooltipContent";
 import { Button } from "./Button";
@@ -14,8 +14,8 @@ export function VariablesPanel() {
   const [search, setSearch] = useState("");
 
   const { groups, variables } = workbookModel;
-  const { visibleGroupKeys, visibleVariableKeys, collapsedGroupKeys } = layoutState;
-  const sortedGroups = getSortedGroups(groups).filter(g => visibleGroupKeys.includes(g.groupKey));
+  const { groupOrderKeys, visibleGroupKeys, visibleVariableKeys, collapsedGroupKeys } = layoutState;
+  const sortedGroups = getOrderedGroups(groups, groupOrderKeys).filter(g => visibleGroupKeys.includes(g.groupKey));
 
   const searchLower = search.toLowerCase().trim();
 

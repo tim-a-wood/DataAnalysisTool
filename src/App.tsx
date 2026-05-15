@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { useAppStore } from "./store/useAppStore";
 import { Header } from "./components/Header";
 import { DataGroupsPanel } from "./components/DataGroupsPanel";
@@ -27,6 +27,8 @@ export default function App() {
   const saveLayout = useAppStore(s => s.saveLayout);
   const layoutState = useAppStore(s => s.layoutState);
   const setFocusedPane = useAppStore(s => s.setFocusedPane);
+  const toggleLeftPanel = useAppStore(s => s.toggleLeftPanel);
+  const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
 
   const appClassName = [
     "app",
@@ -71,6 +73,28 @@ export default function App() {
           onOpenHelp={() => setHelpOpen(true)}
         />
       </div>
+
+      {(layoutState.leftPanelCollapsed || layoutState.focusedPane) && (
+        <button
+          className="panel-rail-toggle panel-rail-toggle-left"
+          onClick={toggleLeftPanel}
+          aria-label="Show left panels"
+          title="Show left panels"
+        >
+          <PanelLeftOpen size={14} />
+        </button>
+      )}
+
+      {(layoutState.rightPanelCollapsed || layoutState.focusedPane) && (
+        <button
+          className="panel-rail-toggle panel-rail-toggle-right"
+          onClick={toggleRightPanel}
+          aria-label="Show plot formatting panel"
+          title="Show plot formatting panel"
+        >
+          <PanelRightOpen size={14} />
+        </button>
+      )}
 
       <div className="app-left-sidebar">
         {activeError && (

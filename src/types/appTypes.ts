@@ -37,6 +37,7 @@ export interface SeriesConfig {
   label: string;
   color: string;
   lineStyle: "solid" | "dashed" | "dotted";
+  plotMode: "line" | "samples";
   width: number;
   yAxis: "left" | "right";
   visible: boolean;
@@ -61,6 +62,7 @@ export interface AppLayoutState {
   leftPanelCollapsed: boolean;
   rightPanelCollapsed: boolean;
   focusedPane: "table" | "plots" | null;
+  groupOrderKeys: string[];
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];
   collapsedGroupKeys: string[];

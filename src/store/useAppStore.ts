@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import type { WorkbookModel, AppLayoutState, PlotSet, AppSettings, ToastMessage, SeriesConfig } from "../types/appTypes";
 import { defaultLayout } from "../config/defaultLayout";
-import { defaultPlotSet } from "../config/defaultPlotConfig";
 import { sampleWorkbookModel } from "../data/sampleWorkbookModel";
 import { saveLayout, loadLayout as loadLayoutData, clearLayout } from "../utils/localStorage";
 import { nearestCase, clampXRange, computeZoomSliderValue, computeWindowSpanFromSlider } from "../model/xRange";
-import { getAllCases } from "../model/selectors";
+import { getAllCases, getOrderedGroups } from "../model/selectors";
+import { createPlotSetForWorkbook, ensurePlotSetCoversVariables } from "../model/plotSet";
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -32,6 +32,7 @@ interface AppState {
   loadWorkbook: (model: WorkbookModel) => void;
   loadSampleWorkbook: () => void;
   toggleGroup: (groupKey: string) => void;
+  reorderGroup: (sourceGroupKey: string, targetGroupKey: string) => void;
   toggleVariable: (variableKey: string) => void;
   toggleGroupCollapse: (groupKey: string) => void;
   setSelectedCase: (c: number) => void;
@@ -87,7 +88,7 @@ function getDefaultXRange(model: WorkbookModel): { xRange: [number, number]; spa
 export const useAppStore = create<AppState>((set, get) => ({
   workbookModel: sampleWorkbookModel,
   layoutState: { ...defaultLayout },
-  plotSet: { ...defaultPlotSet, plots: defaultPlotSet.plots.map(p => ({ ...p, series: p.series.map(s => ({ ...s })) })) },
+  plotSet: createPlotSetForWorkbook(sampleWorkbookModel),
   settings: { autosaveLayout: true },
   toasts: [],
   activeError: null,
@@ -112,13 +113,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         zoomSliderValue: zoom,
         visibleGroupKeys: model.groups.map(g => g.groupKey),
         visibleVariableKeys,
+        groupOrderKeys: getOrderedGroups(model.groups, s.layoutState.groupOrderKeys).map(g => g.groupKey),
       },
+      plotSet: createPlotSetForWorkbook(model),
     }));
     scheduleAutosave(get);
   },
 
   loadSampleWorkbook: () => {
-    set({ workbookModel: sampleWorkbookModel, layoutState: { ...defaultLayout }, activeError: null, isLoading: false });
+    set({ workbookModel: sampleWorkbookModel, layoutState: { ...defaultLayout }, plotSet: createPlotSetForWorkbook(sampleWorkbookModel), activeError: null, isLoading: false });
   },
 
   toggleGroup: (groupKey) => {
@@ -142,6 +145,23 @@ export const useAppStore = create<AppState>((set, get) => ({
         layoutState: { ...prev.layoutState, visibleGroupKeys: [...prev.layoutState.visibleGroupKeys, groupKey], visibleVariableKeys: newVisVarKeys },
       }));
     }
+    scheduleAutosave(get);
+  },
+
+  reorderGroup: (sourceGroupKey, targetGroupKey) => {
+    if (sourceGroupKey === targetGroupKey) return;
+    set(s => {
+      const currentOrder = getOrderedGroups(s.workbookModel.groups, s.layoutState.groupOrderKeys).map(g => g.groupKey);
+      const withoutSource = currentOrder.filter(key => key !== sourceGroupKey);
+      const targetIndex = withoutSource.indexOf(targetGroupKey);
+      if (targetIndex === -1) return s;
+      const nextOrder = [
+        ...withoutSource.slice(0, targetIndex),
+        sourceGroupKey,
+        ...withoutSource.slice(targetIndex),
+      ];
+      return { layoutState: { ...s.layoutState, groupOrderKeys: nextOrder } };
+    });
     scheduleAutosave(get);
   },
 
@@ -187,16 +207,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setFocusedPane: (pane) => {
-    set(s => ({ layoutState: { ...s.layoutState, focusedPane: pane } }));
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: pane,
+        ...(pane ? { leftPanelCollapsed: true, rightPanelCollapsed: true } : {}),
+      },
+    }));
   },
 
   toggleLeftPanel: () => {
-    set(s => ({ layoutState: { ...s.layoutState, leftPanelCollapsed: !s.layoutState.leftPanelCollapsed } }));
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: s.layoutState.leftPanelCollapsed ? null : s.layoutState.focusedPane,
+        leftPanelCollapsed: !s.layoutState.leftPanelCollapsed,
+      },
+    }));
     scheduleAutosave(get);
   },
 
   toggleRightPanel: () => {
-    set(s => ({ layoutState: { ...s.layoutState, rightPanelCollapsed: !s.layoutState.rightPanelCollapsed } }));
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: s.layoutState.rightPanelCollapsed ? null : s.layoutState.focusedPane,
+        rightPanelCollapsed: !s.layoutState.rightPanelCollapsed,
+      },
+    }));
     scheduleAutosave(get);
   },
 
@@ -322,7 +360,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     clearLayout();
     set({
       layoutState: { ...defaultLayout },
-      plotSet: { ...defaultPlotSet, plots: defaultPlotSet.plots.map(p => ({ ...p, series: p.series.map(s => ({...s})) })) },
+      plotSet: createPlotSetForWorkbook(get().workbookModel),
       settings: { autosaveLayout: true },
     });
     get().showToast("Settings updated.");
@@ -340,7 +378,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!data) return;
     set(s => ({
       layoutState: data.layoutState ? { ...s.layoutState, ...data.layoutState } : s.layoutState,
-      plotSet: data.plotSet ?? s.plotSet,
+      plotSet: ensurePlotSetCoversVariables(data.plotSet ?? s.plotSet, s.workbookModel),
       settings: data.settings ?? s.settings,
     }));
   },
