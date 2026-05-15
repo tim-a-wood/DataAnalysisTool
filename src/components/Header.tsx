@@ -28,15 +28,16 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
   };
 
   const loadedAt = workbookModel.isSample ? null : new Date(workbookModel.loadedAtIso);
+  const subtitle = workbookModel.isSample ? 'Sample workbook' : 'Loaded XLSX workbook';
 
   return (
     <div className="header-inner">
       <div className="logo-group">
         <div className="logo-title">
           <Zap size={15} color="var(--blue)" />
-          <span>SignalLite Analyzer</span>
+          <span>Dataset Analyzer</span>
         </div>
-        <div className="logo-sub">Aircraft Performance · FAR25.121 / FAR25.367</div>
+        <div className="logo-sub">{subtitle}</div>
       </div>
 
       <div className="logo-divider" />

@@ -1,13 +1,26 @@
 import { create } from "zustand";
 import type { WorkbookModel, AppLayoutState, PlotSet, AppSettings, ToastMessage, SeriesConfig } from "../types/appTypes";
 import { defaultLayout } from "../config/defaultLayout";
-import { defaultPlotSet } from "../config/defaultPlotConfig";
 import { sampleWorkbookModel } from "../data/sampleWorkbookModel";
 import { saveLayout, loadLayout as loadLayoutData, clearLayout } from "../utils/localStorage";
 import { nearestCase, clampXRange, computeZoomSliderValue, computeWindowSpanFromSlider } from "../model/xRange";
-import { getAllCases } from "../model/selectors";
+import { getAllCases, getOrderedGroups } from "../model/selectors";
+import { createPlotSetForWorkbook, ensurePlotSetCoversVariables } from "../model/plotSet";
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+const PLOT_COLOR_SEQUENCE = [
+  "#2f8cff",
+  "#39b54a",
+  "#ff7a00",
+  "#9b5de5",
+  "#d6a600",
+  "#00b8c8",
+  "#ff4d7d",
+  "#8bd450",
+  "#f06bdc",
+  "#5ec8ff",
+];
 
 function scheduleAutosave(get: () => AppState) {
   if (!get().layoutState.autosaveLayout) return;
@@ -32,14 +45,19 @@ interface AppState {
   loadWorkbook: (model: WorkbookModel) => void;
   loadSampleWorkbook: () => void;
   toggleGroup: (groupKey: string) => void;
+  reorderGroup: (sourceGroupKey: string, targetGroupKey: string) => void;
   toggleVariable: (variableKey: string) => void;
   toggleGroupCollapse: (groupKey: string) => void;
+  togglePlotGroupCollapse: (groupKey: string) => void;
   setSelectedCase: (c: number) => void;
   shiftSelectCase: (c: number) => void;
   setHoveredCase: (c: number | null) => void;
   setHoveredCaseRawX: (rawX: number | null) => void;
   setReferenceCase: (c: number | null) => void;
   setXRange: (range: [number, number]) => void;
+  setFocusedPane: (pane: AppLayoutState["focusedPane"]) => void;
+  toggleLeftPanel: () => void;
+  toggleRightPanel: () => void;
   setZoomBySlider: (v: number) => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -47,6 +65,11 @@ interface AppState {
   previousCase: () => void;
   nextCase: () => void;
   setActivePlotSet: (id: string) => void;
+  setPlotCount: (count: number) => void;
+  setSelectedPlotId: (plotId: string) => void;
+  clearAllPlots: () => void;
+  clearSelectedPlot: () => void;
+  moveSeriesToPlot: (seriesId: string, targetPlotId: string) => void;
   updateSeriesConfig: (seriesId: string, patch: Partial<SeriesConfig>) => void;
   setGridConfig: (patch: object) => void;
   setCursorConfig: (patch: object) => void;
@@ -81,10 +104,19 @@ function getDefaultXRange(model: WorkbookModel): { xRange: [number, number]; spa
   return { xRange, span, zoom: computeZoomSliderValue(span, fw) };
 }
 
+function getNextPlotColor(plotSeries: SeriesConfig[], excludeSeriesId?: string): string {
+  const usedColors = new Set(
+    plotSeries
+      .filter(series => series.visible && series.id !== excludeSeriesId)
+      .map(series => series.color.toLowerCase())
+  );
+  return PLOT_COLOR_SEQUENCE.find(color => !usedColors.has(color.toLowerCase())) ?? PLOT_COLOR_SEQUENCE[0];
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   workbookModel: sampleWorkbookModel,
   layoutState: { ...defaultLayout },
-  plotSet: { ...defaultPlotSet, plots: defaultPlotSet.plots.map(p => ({ ...p, series: p.series.map(s => ({ ...s })) })) },
+  plotSet: createPlotSetForWorkbook(sampleWorkbookModel),
   settings: { autosaveLayout: true },
   toasts: [],
   activeError: null,
@@ -109,13 +141,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         zoomSliderValue: zoom,
         visibleGroupKeys: model.groups.map(g => g.groupKey),
         visibleVariableKeys,
+        groupOrderKeys: getOrderedGroups(model.groups, s.layoutState.groupOrderKeys).map(g => g.groupKey),
+        selectedPlotId: "plot_vr_v2",
       },
+      plotSet: createPlotSetForWorkbook(model),
     }));
     scheduleAutosave(get);
   },
 
   loadSampleWorkbook: () => {
-    set({ workbookModel: sampleWorkbookModel, layoutState: { ...defaultLayout }, activeError: null, isLoading: false });
+    set({ workbookModel: sampleWorkbookModel, layoutState: { ...defaultLayout }, plotSet: createPlotSetForWorkbook(sampleWorkbookModel), activeError: null, isLoading: false });
   },
 
   toggleGroup: (groupKey) => {
@@ -142,6 +177,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+  reorderGroup: (sourceGroupKey, targetGroupKey) => {
+    if (sourceGroupKey === targetGroupKey) return;
+    set(s => {
+      const currentOrder = getOrderedGroups(s.workbookModel.groups, s.layoutState.groupOrderKeys).map(g => g.groupKey);
+      const withoutSource = currentOrder.filter(key => key !== sourceGroupKey);
+      const targetIndex = withoutSource.indexOf(targetGroupKey);
+      if (targetIndex === -1) return s;
+      const nextOrder = [
+        ...withoutSource.slice(0, targetIndex),
+        sourceGroupKey,
+        ...withoutSource.slice(targetIndex),
+      ];
+      return { layoutState: { ...s.layoutState, groupOrderKeys: nextOrder } };
+    });
+    scheduleAutosave(get);
+  },
+
   toggleVariable: (variableKey) => {
     if (variableKey === "Case") return;
     set(s => {
@@ -156,6 +208,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set(s => {
       const ck = s.layoutState.collapsedGroupKeys;
       return { layoutState: { ...s.layoutState, collapsedGroupKeys: ck.includes(groupKey) ? ck.filter(k=>k!==groupKey) : [...ck, groupKey] } };
+    });
+  },
+
+  togglePlotGroupCollapse: (groupKey) => {
+    set(s => {
+      const ck = s.layoutState.plotCollapsedGroupKeys ?? [];
+      return { layoutState: { ...s.layoutState, plotCollapsedGroupKeys: ck.includes(groupKey) ? ck.filter(k=>k!==groupKey) : [...ck, groupKey] } };
     });
   },
 
@@ -183,13 +242,47 @@ export const useAppStore = create<AppState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+  setFocusedPane: (pane) => {
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: pane,
+        ...(pane ? { leftPanelCollapsed: true, rightPanelCollapsed: true } : {}),
+      },
+    }));
+  },
+
+  toggleLeftPanel: () => {
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: s.layoutState.leftPanelCollapsed ? null : s.layoutState.focusedPane,
+        leftPanelCollapsed: !s.layoutState.leftPanelCollapsed,
+      },
+    }));
+    scheduleAutosave(get);
+  },
+
+  toggleRightPanel: () => {
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        focusedPane: s.layoutState.rightPanelCollapsed ? null : s.layoutState.focusedPane,
+        rightPanelCollapsed: !s.layoutState.rightPanelCollapsed,
+      },
+    }));
+    scheduleAutosave(get);
+  },
+
   setZoomBySlider: (v) => {
     const s = get();
     const cases = getAllCases(s.workbookModel.rows);
     if (cases.length === 0) return;
     const fw = getFullWindow(s.workbookModel);
     const span = computeWindowSpanFromSlider(v, fw);
-    const center = s.layoutState.selectedCase ?? cases[Math.floor(cases.length/2)];
+    const center = s.layoutState.xRange
+      ? (s.layoutState.xRange[0] + s.layoutState.xRange[1]) / 2
+      : (s.layoutState.selectedCase ?? cases[Math.floor(cases.length/2)]);
     const xRange = clampXRange(center, span, cases[0], cases[cases.length-1]);
     set(prev => ({ layoutState: { ...prev.layoutState, xRange, currentWindowSpan: span, zoomSliderValue: v } }));
     scheduleAutosave(get);
@@ -255,13 +348,123 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActivePlotSet: (id) => set(s => ({ layoutState: { ...s.layoutState, activePlotSetId: id } })),
 
+  setPlotCount: (count) => {
+    const nextCount = Math.max(1, Math.min(6, count));
+    set(s => {
+      const currentPlots = s.plotSet.plots;
+      if (currentPlots.length === nextCount) return s;
+
+      let plots = currentPlots.map(plot => ({ ...plot, series: plot.series.map(series => ({ ...series })) }));
+      if (nextCount < plots.length) {
+        const kept = plots.slice(0, nextCount);
+        const overflowSeries = plots.slice(nextCount).flatMap(plot => plot.series);
+        kept[nextCount - 1] = {
+          ...kept[nextCount - 1],
+          series: [...kept[nextCount - 1].series, ...overflowSeries],
+        };
+        plots = kept;
+      } else {
+        for (let i = plots.length; i < nextCount; i++) {
+          plots.push({
+            id: `plot_custom_${i + 1}`,
+            title: `Plot ${i + 1}`,
+            leftAxisLabel: "Value",
+            series: [],
+          });
+        }
+      }
+
+      const selectedPlotId = plots.some(plot => plot.id === s.layoutState.selectedPlotId)
+        ? s.layoutState.selectedPlotId
+        : plots[0]?.id ?? null;
+
+      return {
+        plotSet: { ...s.plotSet, name: `Performance Summary (${nextCount} ${nextCount === 1 ? "Plot" : "Plots"})`, plots },
+        layoutState: { ...s.layoutState, selectedPlotId },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  setSelectedPlotId: (plotId) => {
+    set(s => ({ layoutState: { ...s.layoutState, selectedPlotId: plotId } }));
+    scheduleAutosave(get);
+  },
+
+  clearAllPlots: () => {
+    set(s => ({
+      plotSet: {
+        ...s.plotSet,
+        plots: s.plotSet.plots.map(plot => ({
+          ...plot,
+          series: plot.series.map(series => ({ ...series, visible: false })),
+        })),
+      },
+    }));
+    scheduleAutosave(get);
+  },
+
+  clearSelectedPlot: () => {
+    set(s => {
+      const selectedPlotId = s.layoutState.selectedPlotId ?? s.plotSet.plots[0]?.id;
+      return {
+        plotSet: {
+          ...s.plotSet,
+          plots: s.plotSet.plots.map(plot => plot.id === selectedPlotId
+            ? { ...plot, series: plot.series.map(series => ({ ...series, visible: false })) }
+            : plot
+          ),
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  moveSeriesToPlot: (seriesId, targetPlotId) => {
+    set(s => {
+      let movingSeries: SeriesConfig | null = null;
+      const plotsWithoutSeries = s.plotSet.plots.map(plot => {
+        const remaining = plot.series.filter(series => {
+          if (series.id !== seriesId) return true;
+          movingSeries = series;
+          return false;
+        });
+        return remaining.length === plot.series.length ? plot : { ...plot, series: remaining };
+      });
+
+      if (!movingSeries) return s;
+
+      return {
+        plotSet: {
+          ...s.plotSet,
+          plots: plotsWithoutSeries.map(plot => {
+            if (plot.id !== targetPlotId) return plot;
+            const nextSeries = movingSeries!.visible
+              ? { ...movingSeries!, color: getNextPlotColor(plot.series, movingSeries!.id) }
+              : movingSeries!;
+            return { ...plot, series: [...plot.series, nextSeries] };
+          }),
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
   updateSeriesConfig: (seriesId, patch) => {
     set(s => ({
       plotSet: {
         ...s.plotSet,
         plots: s.plotSet.plots.map(p => ({
           ...p,
-          series: p.series.map(ser => ser.id === seriesId ? { ...ser, ...patch } : ser),
+          series: p.series.map(ser => {
+            if (ser.id !== seriesId) return ser;
+            const shouldAutoAssignColor = patch.visible === true && !ser.visible && patch.color === undefined;
+            return {
+              ...ser,
+              ...patch,
+              ...(shouldAutoAssignColor ? { color: getNextPlotColor(p.series, ser.id) } : {}),
+            };
+          }),
         })),
       },
     }));
@@ -303,7 +506,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     clearLayout();
     set({
       layoutState: { ...defaultLayout },
-      plotSet: { ...defaultPlotSet, plots: defaultPlotSet.plots.map(p => ({ ...p, series: p.series.map(s => ({...s})) })) },
+      plotSet: createPlotSetForWorkbook(get().workbookModel),
       settings: { autosaveLayout: true },
     });
     get().showToast("Settings updated.");
@@ -320,8 +523,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const data = loadLayoutData() as { layoutState?: AppLayoutState; plotSet?: PlotSet; settings?: AppSettings } | null;
     if (!data) return;
     set(s => ({
-      layoutState: data.layoutState ? { ...s.layoutState, ...data.layoutState } : s.layoutState,
-      plotSet: data.plotSet ?? s.plotSet,
+      layoutState: data.layoutState ? {
+        ...s.layoutState,
+        ...data.layoutState,
+        selectedPlotId: data.layoutState.selectedPlotId ?? s.layoutState.selectedPlotId,
+      } : s.layoutState,
+      plotSet: ensurePlotSetCoversVariables(data.plotSet ?? s.plotSet, s.workbookModel),
       settings: data.settings ?? s.settings,
     }));
   },

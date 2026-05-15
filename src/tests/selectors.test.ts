@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getSortedGroups, getVisibleGroups, getVisibleVariablesForGroup, getAllCases, getRowByCase } from "../model/selectors";
+import { getOrderedGroups, getSortedGroups, getVisibleGroups, getVisibleVariablesForGroup, getAllCases, getRowByCase } from "../model/selectors";
 import type { DataGroup, VariableDefinition, DataRow } from "../types/appTypes";
 
 const groups: DataGroup[] = [
@@ -29,6 +29,18 @@ describe("getVisibleGroups", () => {
     expect(visible.map(g => g.groupKey)).toContain("test_inputs");
     expect(visible.map(g => g.groupKey)).toContain("inputs");
     expect(visible.map(g => g.groupKey)).not.toContain("expected_outputs");
+  });
+
+  it("honors a custom group order", () => {
+    const visible = getVisibleGroups(groups, ["test_inputs", "expected_outputs", "inputs"], ["inputs", "test_inputs"]);
+    expect(visible.map(g => g.groupKey)).toEqual(["inputs", "test_inputs", "expected_outputs"]);
+  });
+});
+
+describe("getOrderedGroups", () => {
+  it("appends groups missing from the saved order by sortOrder", () => {
+    const ordered = getOrderedGroups(groups, ["inputs"]);
+    expect(ordered.map(g => g.groupKey)).toEqual(["inputs", "test_inputs", "expected_outputs"]);
   });
 });
 

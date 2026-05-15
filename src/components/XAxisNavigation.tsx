@@ -8,6 +8,14 @@ import { Button } from "./Button";
 import { NumberInput } from "./NumberInput";
 import { tooltipContent } from "../config/tooltipContent";
 
+type DataZoomPayload = {
+  batch?: DataZoomPayload[];
+  start?: number;
+  end?: number;
+  startValue?: number;
+  endValue?: number;
+};
+
 export function XAxisNavigation() {
   const workbookModel = useAppStore(s => s.workbookModel);
   const layoutState = useAppStore(s => s.layoutState);
@@ -89,18 +97,26 @@ export function XAxisNavigation() {
   }, [allCases, minCase, maxCase, xRange]);
 
   const handleOverviewDataZoom = useCallback((params: unknown, chart: unknown) => {
-    const inst = chart as { getOption: () => { xAxis?: { min?: number; max?: number }[] } };
-    if (!inst) return;
-    const opt = inst.getOption();
-    const xAxis0 = opt.xAxis?.[0];
-    if (xAxis0 && typeof xAxis0.min === "number" && typeof xAxis0.max === "number") {
-      // The dataZoom gives us start/end values
-      const p = params as { start?: number; end?: number; startValue?: number; endValue?: number };
-      if (typeof p.startValue === "number" && typeof p.endValue === "number") {
-        setXRange([p.startValue, p.endValue]);
-      }
+    const payload = params as DataZoomPayload;
+    const zoom = payload.batch?.[0] ?? payload;
+    if (typeof zoom.startValue === "number" && typeof zoom.endValue === "number") {
+      setXRange([zoom.startValue, zoom.endValue]);
+      return;
     }
-  }, [setXRange]);
+    if (typeof zoom.start === "number" && typeof zoom.end === "number") {
+      const span = maxCase - minCase;
+      setXRange([
+        minCase + (zoom.start / 100) * span,
+        minCase + (zoom.end / 100) * span,
+      ]);
+      return;
+    }
+    const inst = chart as { getOption?: () => { dataZoom?: { startValue?: number; endValue?: number; start?: number; end?: number }[] } };
+    const dz = inst.getOption?.().dataZoom?.[0];
+    if (dz && typeof dz.startValue === "number" && typeof dz.endValue === "number") {
+      setXRange([dz.startValue, dz.endValue]);
+    }
+  }, [maxCase, minCase, setXRange]);
 
   return (
     <div className="x-axis-nav">

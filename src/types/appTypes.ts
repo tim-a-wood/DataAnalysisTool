@@ -37,6 +37,7 @@ export interface SeriesConfig {
   label: string;
   color: string;
   lineStyle: "solid" | "dashed" | "dotted";
+  plotMode: "line" | "samples";
   width: number;
   yAxis: "left" | "right";
   visible: boolean;
@@ -58,9 +59,14 @@ export interface PlotSet {
 }
 
 export interface AppLayoutState {
+  leftPanelCollapsed: boolean;
+  rightPanelCollapsed: boolean;
+  focusedPane: "table" | "plots" | null;
+  groupOrderKeys: string[];
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];
   collapsedGroupKeys: string[];
+  plotCollapsedGroupKeys: string[];
   selectedCase: number | null;
   hoveredCase: number | null;
   hoveredCaseRawX: number | null;
@@ -69,6 +75,7 @@ export interface AppLayoutState {
   currentWindowSpan: number;
   zoomSliderValue: number;
   activePlotSetId: string;
+  selectedPlotId: string | null;
   showXGrid: boolean;
   showYGrid: boolean;
   showMinorGrid: boolean;

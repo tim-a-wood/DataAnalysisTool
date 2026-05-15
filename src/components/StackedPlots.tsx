@@ -10,11 +10,19 @@ import { hexToRgba } from "../utils/color";
 
 const LINE_STYLE_MAP: Record<string, string> = { solid: "solid", dashed: "dashed", dotted: "dotted" };
 
-const GRIDS = [
-  { top: "6%", height: "24%", left: "8%", right: "15%" },
-  { top: "37%", height: "24%", left: "8%", right: "15%" },
-  { top: "68%", height: "24%", left: "8%", right: "15%" },
-];
+function createPlotGrids(count: number): { top: string; height: string; left: string; right: string }[] {
+  const safeCount = Math.max(1, count);
+  const topPadding = 6;
+  const bottomPadding = 6;
+  const gap = safeCount === 1 ? 0 : 6;
+  const height = (100 - topPadding - bottomPadding - gap * (safeCount - 1)) / safeCount;
+  return Array.from({ length: safeCount }, (_, index) => ({
+    top: `${topPadding + index * (height + gap)}%`,
+    height: `${height}%`,
+    left: "9%",
+    right: "17%",
+  }));
+}
 
 export function StackedPlots() {
   const echartsRef = useRef<ReactECharts>(null);
@@ -58,7 +66,7 @@ export function StackedPlots() {
     const minCase = xRange?.[0] ?? (allCases[0] ?? 1);
     const maxCase = xRange?.[1] ?? (allCases[allCases.length - 1] ?? 120);
 
-    const grids = GRIDS;
+    const grids = createPlotGrids(plotSet.plots.length);
     const xAxes: object[] = [];
     const yAxes: object[] = [];
     const seriesList: object[] = [];
@@ -67,8 +75,8 @@ export function StackedPlots() {
     const axisBase = {
       type: "value",
       axisLine: { lineStyle: { color: "rgba(32,50,66,0.8)" } },
-      splitLine: { lineStyle: { color: "rgba(32,50,66,0.5)" } },
-      axisLabel: { color: "#8797a7", fontSize: 10, fontFamily: "JetBrains Mono, monospace" },
+      splitLine: { lineStyle: { color: "rgba(74,100,120,0.48)" } },
+      axisLabel: { color: "#9bb0c2", fontSize: 10, fontFamily: "JetBrains Mono, monospace", margin: 8, hideOverlap: true },
       axisTick: { lineStyle: { color: "rgba(32,50,66,0.8)" } },
     };
 
@@ -78,8 +86,8 @@ export function StackedPlots() {
         gridIndex: pi,
         min: minCase,
         max: maxCase,
-        splitLine: { show: showXGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.5)" } },
-        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.25)" } },
+        splitLine: { show: showXGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.55)" } },
+        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.28)" } },
         axisPointer: { snap: true },
       });
 
@@ -93,9 +101,11 @@ export function StackedPlots() {
         ...axisBase,
         gridIndex: pi,
         name: plot.leftAxisLabel,
-        nameTextStyle: { color: "#8797a7", fontSize: 9 },
-        splitLine: { show: showYGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.5)" } },
-        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(32,50,66,0.25)" } },
+        nameLocation: "end",
+        nameGap: 16,
+        nameTextStyle: { color: "#9bb0c2", fontSize: 9, align: "right", padding: [0, 8, 0, 0] },
+        splitLine: { show: showYGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.55)" } },
+        minorSplitLine: { show: showMinorGrid, lineStyle: { ...gridLineStyle, color: "rgba(74,100,120,0.28)" } },
       });
 
       // Right Y axis
@@ -103,7 +113,9 @@ export function StackedPlots() {
         ...axisBase,
         gridIndex: pi,
         name: plot.rightAxisLabel ?? "",
-        nameTextStyle: { color: "#8797a7", fontSize: 9 },
+        nameLocation: "end",
+        nameGap: 16,
+        nameTextStyle: { color: "#9bb0c2", fontSize: 9, align: "left", padding: [0, 0, 0, 8] },
         splitLine: { show: false },
         position: "right",
       });
@@ -112,6 +124,7 @@ export function StackedPlots() {
 
       plot.series.forEach((s, si) => {
         if (!s.visible) return;
+        const plotMode = s.plotMode ?? "line";
         const seriesData = rows.map(row => {
           const x = row["Case"];
           const y = row[s.variableKey];
@@ -131,13 +144,14 @@ export function StackedPlots() {
         } : undefined;
 
         seriesList.push({
-          type: "line",
+          type: plotMode === "samples" ? "scatter" : "line",
           name: s.label,
           data: seriesData,
           xAxisIndex: pi,
           yAxisIndex,
           smooth: false,
-          symbol: "none",
+          symbol: plotMode === "samples" ? "circle" : "none",
+          symbolSize: plotMode === "samples" ? Math.max(4, s.width + 3) : 0,
           lineStyle: {
             color: s.color,
             type: LINE_STYLE_MAP[s.lineStyle] as string,
@@ -169,8 +183,8 @@ export function StackedPlots() {
         legends.push({
           data: legendData,
           orient: "vertical",
-          right: "2%",
-          top: GRIDS[pi]?.top ?? "6%",
+          right: "2.5%",
+          top: grids[pi]?.top ?? "6%",
           backgroundColor: hexToRgba("#0a121a", 0.7),
           padding: [4, 8],
           textStyle: { color: "#8797a7", fontSize: 9, fontFamily: "JetBrains Mono, monospace" },
@@ -273,7 +287,7 @@ export function StackedPlots() {
         ref={echartsRef}
         option={option}
         style={{ width: "100%", height: "100%" }}
-        notMerge={false}
+        notMerge={true}
         lazyUpdate={true}
         onChartReady={onChartReady}
         onEvents={onEvents}

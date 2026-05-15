@@ -5,13 +5,13 @@ interface Props {
 
 export function ColorSwatch({ color, onChange }: Props) {
   return (
-    <input
-      type="color"
-      value={color}
-      onChange={e => onChange(e.target.value)}
-      className="color-swatch"
-      title="Choose color"
-      style={{ background: color }}
-    />
+    <label className="color-swatch" title="Choose color" style={{ background: color }}>
+      <input
+        type="color"
+        value={color}
+        onChange={e => onChange(e.target.value)}
+        aria-label="Choose color"
+      />
+    </label>
   );
 }

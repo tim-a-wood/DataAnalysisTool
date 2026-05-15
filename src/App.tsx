@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Maximize2, Minimize2, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { useAppStore } from "./store/useAppStore";
 import { Header } from "./components/Header";
 import { DataGroupsPanel } from "./components/DataGroupsPanel";
@@ -24,6 +25,18 @@ export default function App() {
   const previousCase = useAppStore(s => s.previousCase);
   const nextCase = useAppStore(s => s.nextCase);
   const saveLayout = useAppStore(s => s.saveLayout);
+  const layoutState = useAppStore(s => s.layoutState);
+  const setFocusedPane = useAppStore(s => s.setFocusedPane);
+  const toggleLeftPanel = useAppStore(s => s.toggleLeftPanel);
+  const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
+
+  const appClassName = [
+    "app",
+    layoutState.leftPanelCollapsed ? "left-collapsed" : "",
+    layoutState.rightPanelCollapsed ? "right-collapsed" : "",
+    layoutState.focusedPane === "table" ? "focus-table" : "",
+    layoutState.focusedPane === "plots" ? "focus-plots" : "",
+  ].filter(Boolean).join(" ");
 
   useEffect(() => {
     loadLayout();
@@ -53,13 +66,37 @@ export default function App() {
   }, [previousCase, nextCase, saveLayout]);
 
   return (
-    <div className="app">
+    <div className={appClassName}>
       <div className="app-header">
         <Header
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenHelp={() => setHelpOpen(true)}
         />
       </div>
+
+      {(layoutState.leftPanelCollapsed || layoutState.focusedPane) && (
+        <button
+          className="panel-rail-toggle panel-rail-toggle-left"
+          onClick={toggleLeftPanel}
+          aria-label="Show left panels"
+          title="Show left panels"
+        >
+          <PanelLeftOpen size={14} />
+          <span>Panels</span>
+        </button>
+      )}
+
+      {(layoutState.rightPanelCollapsed || layoutState.focusedPane) && (
+        <button
+          className="panel-rail-toggle panel-rail-toggle-right"
+          onClick={toggleRightPanel}
+          aria-label="Show plot formatting panel"
+          title="Show plot formatting panel"
+        >
+          <PanelRightOpen size={14} />
+          <span>Formatting</span>
+        </button>
+      )}
 
       <div className="app-left-sidebar">
         {activeError && (
@@ -71,10 +108,26 @@ export default function App() {
       </div>
 
       <div className="app-table">
+        <button
+          className="pane-action"
+          onClick={() => setFocusedPane(layoutState.focusedPane === "table" ? null : "table")}
+          aria-label={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
+          title={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
+        >
+          {layoutState.focusedPane === "table" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        </button>
         <GroupedDataTable />
       </div>
 
       <div className="app-plots">
+        <button
+          className="pane-action"
+          onClick={() => setFocusedPane(layoutState.focusedPane === "plots" ? null : "plots")}
+          aria-label={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
+          title={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
+        >
+          {layoutState.focusedPane === "plots" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+        </button>
         <PlotWorkspace />
       </div>
 

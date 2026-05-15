@@ -21,11 +21,11 @@ export function GroupedDataTable() {
   const shiftSelectCase = useAppStore(s => s.shiftSelectCase);
 
   const { groups, variables, rows } = workbookModel;
-  const { visibleGroupKeys, visibleVariableKeys, selectedCase } = layoutState;
+  const { groupOrderKeys, visibleGroupKeys, visibleVariableKeys, selectedCase } = layoutState;
 
   const visibleGroups = useMemo(
-    () => getVisibleGroups(groups, visibleGroupKeys),
-    [groups, visibleGroupKeys]
+    () => getVisibleGroups(groups, visibleGroupKeys, groupOrderKeys),
+    [groups, visibleGroupKeys, groupOrderKeys]
   );
 
   const cols = useMemo<ColDef[]>(() => {
@@ -86,7 +86,7 @@ export function GroupedDataTable() {
                 className="group-header"
                 colSpan={g.colCount}
                 style={{
-                  background: hexToRgba(g.groupColor, 0.18),
+                  background: g.groupKey === "_case" ? "var(--bg-2)" : `linear-gradient(0deg, ${hexToRgba(g.groupColor, 0.16)}, ${hexToRgba(g.groupColor, 0.16)}), var(--bg-2)`,
                   borderBottom: `2px solid ${hexToRgba(g.groupColor, 0.55)}`,
                 }}
               >

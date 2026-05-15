@@ -6,6 +6,7 @@ export const tooltipContent = {
   help: "Open help for workbook format, groups, plotting, cursors, and export.",
   dataGroups: "Show or hide complete configurable groups.",
   variablesSearch: "Filter variables by display name, variable key, unit, or group name.",
+  plotVariablesSearch: "Filter plot variables by display name, variable key, unit, or group name.",
   selectAllVariables: "Show all variables in all visible groups.",
   clearAllVariables: "Hide all variables except Case #.",
   caseAlwaysVisible: "Case # is always visible because it is the required table key and plot x-axis.",
