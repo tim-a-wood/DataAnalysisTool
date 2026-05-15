@@ -35,6 +35,7 @@ interface AppState {
   reorderGroup: (sourceGroupKey: string, targetGroupKey: string) => void;
   toggleVariable: (variableKey: string) => void;
   toggleGroupCollapse: (groupKey: string) => void;
+  togglePlotGroupCollapse: (groupKey: string) => void;
   setSelectedCase: (c: number) => void;
   shiftSelectCase: (c: number) => void;
   setHoveredCase: (c: number | null) => void;
@@ -179,6 +180,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set(s => {
       const ck = s.layoutState.collapsedGroupKeys;
       return { layoutState: { ...s.layoutState, collapsedGroupKeys: ck.includes(groupKey) ? ck.filter(k=>k!==groupKey) : [...ck, groupKey] } };
+    });
+  },
+
+  togglePlotGroupCollapse: (groupKey) => {
+    set(s => {
+      const ck = s.layoutState.plotCollapsedGroupKeys ?? [];
+      return { layoutState: { ...s.layoutState, plotCollapsedGroupKeys: ck.includes(groupKey) ? ck.filter(k=>k!==groupKey) : [...ck, groupKey] } };
     });
   },
 

@@ -82,6 +82,7 @@ export default function App() {
           title="Show left panels"
         >
           <PanelLeftOpen size={14} />
+          <span>Panels</span>
         </button>
       )}
 
@@ -93,6 +94,7 @@ export default function App() {
           title="Show plot formatting panel"
         >
           <PanelRightOpen size={14} />
+          <span>Formatting</span>
         </button>
       )}
 

@@ -66,6 +66,7 @@ export interface AppLayoutState {
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];
   collapsedGroupKeys: string[];
+  plotCollapsedGroupKeys: string[];
   selectedCase: number | null;
   hoveredCase: number | null;
   hoveredCaseRawX: number | null;

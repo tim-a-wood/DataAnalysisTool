@@ -44,6 +44,7 @@ export function PlotFormattingPanel() {
   const layoutState = useAppStore(s => s.layoutState);
   const updateSeriesConfig = useAppStore(s => s.updateSeriesConfig);
   const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
+  const togglePlotGroupCollapse = useAppStore(s => s.togglePlotGroupCollapse);
   const setGridConfig = useAppStore(s => s.setGridConfig);
   const setCursorConfig = useAppStore(s => s.setCursorConfig);
   const resetView = useAppStore(s => s.resetView);
@@ -51,6 +52,7 @@ export function PlotFormattingPanel() {
   const {
     showXGrid, showYGrid, showMinorGrid, gridStyle, gridOpacity,
     showCrosshair, snapToData, showTooltips,
+    plotCollapsedGroupKeys,
   } = layoutState;
 
   const seriesByVariableKey = React.useMemo(() => {
@@ -99,11 +101,19 @@ export function PlotFormattingPanel() {
 
       {groupedSeries.map(({ group, variables }) => (
         <div key={group.groupKey} className="plot-panel-section">
-          <div className="plot-panel-section-title series-group-title">
+          <div
+            className="plot-series-group-header"
+            onClick={() => togglePlotGroupCollapse(group.groupKey)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") togglePlotGroupCollapse(group.groupKey); }}
+            aria-expanded={!plotCollapsedGroupKeys.includes(group.groupKey)}
+          >
+            <span className={`variable-group-chevron${plotCollapsedGroupKeys.includes(group.groupKey) ? " collapsed" : ""}`}>▾</span>
             <span className="group-color-dot" style={{ background: group.color }} />
-            <span>{group.displayName}</span>
+            <span className="plot-panel-section-title series-group-title">{group.displayName}</span>
           </div>
-          {variables.map(({ variable, series: s }) => (
+          {!plotCollapsedGroupKeys.includes(group.groupKey) && variables.map(({ variable, series: s }) => (
             <div key={s.id} className="series-row">
               <div className="series-row-top">
                 <AppTooltip content={tooltipContent.seriesVisibility}>

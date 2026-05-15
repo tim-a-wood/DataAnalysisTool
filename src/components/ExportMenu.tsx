@@ -50,7 +50,7 @@ export function ExportMenu() {
     const buf = await wb.xlsx.writeBuffer();
     downloadBlob(
       new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-      `signallite_table_${ts()}.xlsx`
+      `dataset_analyzer_table_${ts()}.xlsx`
     );
     useAppStore.getState().showToast('Export complete.');
     setOpen(false);
@@ -61,14 +61,14 @@ export function ExportMenu() {
     if (!inst) { useAppStore.getState().showToast('No plot to export.', 'warning'); return; }
     const url = inst.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#070d13' });
     const a = document.createElement('a');
-    a.href = url; a.download = `signallite_plots_${ts()}.png`; a.click();
+    a.href = url; a.download = `dataset_analyzer_plots_${ts()}.png`; a.click();
     useAppStore.getState().showToast('Export complete.');
     setOpen(false);
   };
 
   const exportLayout = () => {
     const data = { layoutState, plotSet, settings };
-    downloadText(JSON.stringify(data, null, 2), `signallite_layout_${ts()}.json`);
+    downloadText(JSON.stringify(data, null, 2), `dataset_analyzer_layout_${ts()}.json`);
     useAppStore.getState().showToast('Export complete.');
     setOpen(false);
   };

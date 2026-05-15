@@ -27,9 +27,9 @@ export function HelpDrawer({ onClose }: Props) {
   return (
     <>
       <div className="drawer-backdrop" onClick={onClose} />
-      <div className="drawer" role="dialog" aria-modal="true" aria-label="SignalLite Help">
+    <div className="drawer" role="dialog" aria-modal="true" aria-label="Dataset Analyzer Help">
         <div className="drawer-header">
-          <span className="drawer-title">SignalLite Help</span>
+          <span className="drawer-title">Dataset Analyzer Help</span>
           <button ref={closeRef} className="btn btn-icon" onClick={onClose} aria-label="Close help">
             <X size={15} />
           </button>

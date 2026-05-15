@@ -35,7 +35,7 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
       <div className="logo-group">
         <div className="logo-title">
           <Zap size={15} color="var(--blue)" />
-          <span>SignalLite Analyzer</span>
+          <span>Dataset Analyzer</span>
         </div>
         <div className="logo-sub">{subtitle}</div>
       </div>

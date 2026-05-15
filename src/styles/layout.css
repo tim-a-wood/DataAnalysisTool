@@ -44,21 +44,40 @@ body {
 .app.focus-table .app-table,
 .app.focus-plots .app-plots { grid-column: 2; grid-row: 2/4; }
 
+.app.left-collapsed .app-table,
+.app.left-collapsed .app-plots,
+.app.focus-table .app-table,
+.app.focus-plots .app-plots { padding-left: 32px; }
+
+.app.right-collapsed .app-table,
+.app.right-collapsed .app-plots,
+.app.focus-table .app-table,
+.app.focus-plots .app-plots { padding-right: 32px; }
+
 .panel-rail-toggle {
   position: fixed;
-  top: 60px;
+  top: 104px;
   z-index: 30;
-  width: 28px;
-  height: 34px;
+  width: 30px;
+  height: 128px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   border: 1px solid var(--border-strong);
   background: var(--panel-raised);
   color: var(--text-1);
   cursor: pointer;
   box-shadow: var(--shadow-panel);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+.panel-rail-toggle svg { flex-shrink: 0; }
 .panel-rail-toggle:hover { background: var(--bg-2); color: var(--text-0); }
 .panel-rail-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .panel-rail-toggle-left { left: 0; border-left: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
