@@ -32,6 +32,8 @@ const PLOT_MODE_OPTIONS = [
   { value: "samples", label: "Samples" },
 ];
 
+const PLOT_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6].map(count => ({ value: String(count), label: String(count) }));
+
 const GRID_STYLE_OPTIONS = [
   { value: "solid", label: "Solid" },
   { value: "dashed", label: "Dashed" },
@@ -44,6 +46,11 @@ export function PlotFormattingPanel() {
   const plotSet = useAppStore(s => s.plotSet);
   const layoutState = useAppStore(s => s.layoutState);
   const updateSeriesConfig = useAppStore(s => s.updateSeriesConfig);
+  const setPlotCount = useAppStore(s => s.setPlotCount);
+  const setSelectedPlotId = useAppStore(s => s.setSelectedPlotId);
+  const clearAllPlots = useAppStore(s => s.clearAllPlots);
+  const clearSelectedPlot = useAppStore(s => s.clearSelectedPlot);
+  const moveSeriesToPlot = useAppStore(s => s.moveSeriesToPlot);
   const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
   const togglePlotGroupCollapse = useAppStore(s => s.togglePlotGroupCollapse);
   const setGridConfig = useAppStore(s => s.setGridConfig);
@@ -54,11 +61,23 @@ export function PlotFormattingPanel() {
     showXGrid, showYGrid, showMinorGrid, gridStyle, gridOpacity,
     showCrosshair, snapToData, showTooltips,
     plotCollapsedGroupKeys,
+    selectedPlotId,
   } = layoutState;
 
   const seriesByVariableKey = React.useMemo(() => {
     return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.variableKey, series])));
   }, [plotSet]);
+
+  const plotOptions = React.useMemo(() => {
+    return plotSet.plots.map((plot, index) => ({
+      value: plot.id,
+      label: `${index + 1}: ${plot.title}`,
+    }));
+  }, [plotSet.plots]);
+
+  const plotIdBySeriesId = React.useMemo(() => {
+    return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.id, plot.id])));
+  }, [plotSet.plots]);
 
   const searchLower = search.toLowerCase().trim();
 
@@ -122,6 +141,28 @@ export function PlotFormattingPanel() {
           options={[{ value: plotSet.id, label: plotSet.name }]}
           disabled
         />
+        <div className="plot-structure-controls">
+          <div className="grid-row">
+            <span className="grid-row-label">Stacked Plots</span>
+            <Select
+              value={String(plotSet.plots.length)}
+              onChange={v => setPlotCount(Number(v))}
+              options={PLOT_COUNT_OPTIONS}
+            />
+          </div>
+          <div className="grid-row">
+            <span className="grid-row-label">Selected Subplot</span>
+            <Select
+              value={selectedPlotId ?? plotSet.plots[0]?.id ?? ""}
+              onChange={setSelectedPlotId}
+              options={plotOptions}
+            />
+          </div>
+          <div className="plot-clear-actions">
+            <Button variant="ghost" size="sm" onClick={clearAllPlots}>Clear All</Button>
+            <Button variant="ghost" size="sm" onClick={clearSelectedPlot}>Clear Selected</Button>
+          </div>
+        </div>
       </div>
 
       {groupedSeries.map(({ group, variables }) => (
@@ -178,6 +219,11 @@ export function PlotFormattingPanel() {
                   value={s.yAxis}
                   onChange={v => updateSeriesConfig(s.id, { yAxis: v as "left" | "right" })}
                   options={AXIS_OPTIONS}
+                />
+                <Select
+                  value={plotIdBySeriesId.get(s.id) ?? plotSet.plots[0]?.id ?? ""}
+                  onChange={v => moveSeriesToPlot(s.id, v)}
+                  options={plotOptions}
                 />
               </div>
             </div>

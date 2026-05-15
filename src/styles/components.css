@@ -83,6 +83,9 @@
 .plot-panel { padding: 4px 0; }
 .plot-panel-section { padding: 8px 10px; border-bottom: 1px solid var(--border-soft); }
 .plot-panel-section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.plot-structure-controls { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.plot-clear-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+.plot-clear-actions .btn { justify-content: center; }
 .plot-series-group-header { display: flex; align-items: center; gap: 6px; margin: -2px -4px 6px; padding: 4px; border-radius: var(--radius-sm); cursor: pointer; user-select: none; }
 .plot-series-group-header:hover { background: var(--hover-bg); }
 .plot-series-group-header .plot-panel-section-title { margin-bottom: 0; flex: 1; }

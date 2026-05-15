@@ -52,6 +52,11 @@ interface AppState {
   previousCase: () => void;
   nextCase: () => void;
   setActivePlotSet: (id: string) => void;
+  setPlotCount: (count: number) => void;
+  setSelectedPlotId: (plotId: string) => void;
+  clearAllPlots: () => void;
+  clearSelectedPlot: () => void;
+  moveSeriesToPlot: (seriesId: string, targetPlotId: string) => void;
   updateSeriesConfig: (seriesId: string, patch: Partial<SeriesConfig>) => void;
   setGridConfig: (patch: object) => void;
   setCursorConfig: (patch: object) => void;
@@ -115,6 +120,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         visibleGroupKeys: model.groups.map(g => g.groupKey),
         visibleVariableKeys,
         groupOrderKeys: getOrderedGroups(model.groups, s.layoutState.groupOrderKeys).map(g => g.groupKey),
+        selectedPlotId: "plot_vr_v2",
       },
       plotSet: createPlotSetForWorkbook(model),
     }));
@@ -320,6 +326,105 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActivePlotSet: (id) => set(s => ({ layoutState: { ...s.layoutState, activePlotSetId: id } })),
 
+  setPlotCount: (count) => {
+    const nextCount = Math.max(1, Math.min(6, count));
+    set(s => {
+      const currentPlots = s.plotSet.plots;
+      if (currentPlots.length === nextCount) return s;
+
+      let plots = currentPlots.map(plot => ({ ...plot, series: plot.series.map(series => ({ ...series })) }));
+      if (nextCount < plots.length) {
+        const kept = plots.slice(0, nextCount);
+        const overflowSeries = plots.slice(nextCount).flatMap(plot => plot.series);
+        kept[nextCount - 1] = {
+          ...kept[nextCount - 1],
+          series: [...kept[nextCount - 1].series, ...overflowSeries],
+        };
+        plots = kept;
+      } else {
+        for (let i = plots.length; i < nextCount; i++) {
+          plots.push({
+            id: `plot_custom_${i + 1}`,
+            title: `Plot ${i + 1}`,
+            leftAxisLabel: "Value",
+            series: [],
+          });
+        }
+      }
+
+      const selectedPlotId = plots.some(plot => plot.id === s.layoutState.selectedPlotId)
+        ? s.layoutState.selectedPlotId
+        : plots[0]?.id ?? null;
+
+      return {
+        plotSet: { ...s.plotSet, name: `Performance Summary (${nextCount} ${nextCount === 1 ? "Plot" : "Plots"})`, plots },
+        layoutState: { ...s.layoutState, selectedPlotId },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  setSelectedPlotId: (plotId) => {
+    set(s => ({ layoutState: { ...s.layoutState, selectedPlotId: plotId } }));
+    scheduleAutosave(get);
+  },
+
+  clearAllPlots: () => {
+    set(s => ({
+      plotSet: {
+        ...s.plotSet,
+        plots: s.plotSet.plots.map(plot => ({
+          ...plot,
+          series: plot.series.map(series => ({ ...series, visible: false })),
+        })),
+      },
+    }));
+    scheduleAutosave(get);
+  },
+
+  clearSelectedPlot: () => {
+    set(s => {
+      const selectedPlotId = s.layoutState.selectedPlotId ?? s.plotSet.plots[0]?.id;
+      return {
+        plotSet: {
+          ...s.plotSet,
+          plots: s.plotSet.plots.map(plot => plot.id === selectedPlotId
+            ? { ...plot, series: plot.series.map(series => ({ ...series, visible: false })) }
+            : plot
+          ),
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  moveSeriesToPlot: (seriesId, targetPlotId) => {
+    set(s => {
+      let movingSeries: SeriesConfig | null = null;
+      const plotsWithoutSeries = s.plotSet.plots.map(plot => {
+        const remaining = plot.series.filter(series => {
+          if (series.id !== seriesId) return true;
+          movingSeries = series;
+          return false;
+        });
+        return remaining.length === plot.series.length ? plot : { ...plot, series: remaining };
+      });
+
+      if (!movingSeries) return s;
+
+      return {
+        plotSet: {
+          ...s.plotSet,
+          plots: plotsWithoutSeries.map(plot => plot.id === targetPlotId
+            ? { ...plot, series: [...plot.series, movingSeries!] }
+            : plot
+          ),
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
   updateSeriesConfig: (seriesId, patch) => {
     set(s => ({
       plotSet: {
@@ -385,7 +490,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const data = loadLayoutData() as { layoutState?: AppLayoutState; plotSet?: PlotSet; settings?: AppSettings } | null;
     if (!data) return;
     set(s => ({
-      layoutState: data.layoutState ? { ...s.layoutState, ...data.layoutState } : s.layoutState,
+      layoutState: data.layoutState ? {
+        ...s.layoutState,
+        ...data.layoutState,
+        selectedPlotId: data.layoutState.selectedPlotId ?? s.layoutState.selectedPlotId,
+      } : s.layoutState,
       plotSet: ensurePlotSetCoversVariables(data.plotSet ?? s.plotSet, s.workbookModel),
       settings: data.settings ?? s.settings,
     }));

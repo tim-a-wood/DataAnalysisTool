@@ -16,6 +16,7 @@ export const defaultLayout: AppLayoutState = {
   currentWindowSpan: 16,
   zoomSliderValue: 86,
   activePlotSetId: "performance_summary",
+  selectedPlotId: "plot_vr_v2",
   showXGrid: true,
   showYGrid: true,
   showMinorGrid: false,

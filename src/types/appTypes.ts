@@ -75,6 +75,7 @@ export interface AppLayoutState {
   currentWindowSpan: number;
   zoomSliderValue: number;
   activePlotSetId: string;
+  selectedPlotId: string | null;
   showXGrid: boolean;
   showYGrid: boolean;
   showMinorGrid: boolean;

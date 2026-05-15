@@ -10,11 +10,19 @@ import { hexToRgba } from "../utils/color";
 
 const LINE_STYLE_MAP: Record<string, string> = { solid: "solid", dashed: "dashed", dotted: "dotted" };
 
-const GRIDS = [
-  { top: "8%", height: "22%", left: "9%", right: "17%" },
-  { top: "39%", height: "22%", left: "9%", right: "17%" },
-  { top: "70%", height: "22%", left: "9%", right: "17%" },
-];
+function createPlotGrids(count: number): { top: string; height: string; left: string; right: string }[] {
+  const safeCount = Math.max(1, count);
+  const topPadding = 6;
+  const bottomPadding = 6;
+  const gap = safeCount === 1 ? 0 : 6;
+  const height = (100 - topPadding - bottomPadding - gap * (safeCount - 1)) / safeCount;
+  return Array.from({ length: safeCount }, (_, index) => ({
+    top: `${topPadding + index * (height + gap)}%`,
+    height: `${height}%`,
+    left: "9%",
+    right: "17%",
+  }));
+}
 
 export function StackedPlots() {
   const echartsRef = useRef<ReactECharts>(null);
@@ -58,7 +66,7 @@ export function StackedPlots() {
     const minCase = xRange?.[0] ?? (allCases[0] ?? 1);
     const maxCase = xRange?.[1] ?? (allCases[allCases.length - 1] ?? 120);
 
-    const grids = GRIDS;
+    const grids = createPlotGrids(plotSet.plots.length);
     const xAxes: object[] = [];
     const yAxes: object[] = [];
     const seriesList: object[] = [];
@@ -176,7 +184,7 @@ export function StackedPlots() {
           data: legendData,
           orient: "vertical",
           right: "2.5%",
-          top: GRIDS[pi]?.top ?? "6%",
+          top: grids[pi]?.top ?? "6%",
           backgroundColor: hexToRgba("#0a121a", 0.7),
           padding: [4, 8],
           textStyle: { color: "#8797a7", fontSize: 9, fontFamily: "JetBrains Mono, monospace" },
@@ -279,7 +287,7 @@ export function StackedPlots() {
         ref={echartsRef}
         option={option}
         style={{ width: "100%", height: "100%" }}
-        notMerge={false}
+        notMerge={true}
         lazyUpdate={true}
         onChartReady={onChartReady}
         onEvents={onEvents}
