@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { useAppStore } from '../store/useAppStore';
 import { getEChartsInstance } from './echartsInstance';
 import { downloadBlob, downloadText } from '../utils/download';
@@ -27,7 +27,7 @@ export function ExportMenu() {
 
   const ts = () => formatTimestamp(new Date());
 
-  const exportTable = () => {
+  const exportTable = async () => {
     const visibleGroups = getSortedGroups(workbookModel.groups)
       .filter(g => layoutState.visibleGroupKeys.includes(g.groupKey));
     const allVisibleVarKeys: string[] = ['Case'];
@@ -37,20 +37,21 @@ export function ExportMenu() {
         .sort((a, b) => a.sortOrder - b.sortOrder);
       allVisibleVarKeys.push(...grpVars.map(v => v.variableKey));
     }
-    const tableRows = workbookModel.rows.map(row => {
-      const out: Record<string, string> = {};
-      for (const k of allVisibleVarKeys) {
-        const varDef = workbookModel.variables.find(v => v.variableKey === k);
-        const displayName = varDef ? `${varDef.displayName} [${varDef.unit}]` : k;
-        out[displayName] = formatTableValue(row[k], k);
-      }
-      return out;
+    const headers = allVisibleVarKeys.map(k => {
+      const varDef = workbookModel.variables.find(v => v.variableKey === k);
+      return varDef ? `${varDef.displayName} [${varDef.unit}]` : k;
     });
-    const ws = XLSX.utils.json_to_sheet(tableRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    downloadBlob(new Blob([buf], { type: 'application/octet-stream' }), `signallite_table_${ts()}.xlsx`);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Data');
+    ws.addRow(headers);
+    for (const row of workbookModel.rows) {
+      ws.addRow(allVisibleVarKeys.map(k => formatTableValue(row[k], k)));
+    }
+    const buf = await wb.xlsx.writeBuffer();
+    downloadBlob(
+      new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      `signallite_table_${ts()}.xlsx`
+    );
     useAppStore.getState().showToast('Export complete.');
     setOpen(false);
   };

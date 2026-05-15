@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import ExcelJS from "exceljs";
+import { parseWorkbookFile } from "../xlsx/parseWorkbook";
 import { validateFile, validateSheets } from "../xlsx/validateWorkbook";
 import type { ParsedSheets } from "../xlsx/validateWorkbook";
 
@@ -62,5 +64,36 @@ describe("validateSheets", () => {
     };
     const errors = validateSheets(sheets);
     expect(errors).toHaveLength(0);
+  });
+});
+
+describe("parseWorkbookFile", () => {
+  it("parses a workbook with Data, Groups, and Variables sheets", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const data = workbook.addWorksheet("Data");
+    data.addRow(["Case", "Altitude", "IsValid"]);
+    data.addRow([1, 12000, true]);
+
+    const groups = workbook.addWorksheet("Groups");
+    groups.addRow(["GroupKey", "DisplayName", "Color", "SortOrder", "DefaultVisible"]);
+    groups.addRow(["performance", "Performance", "#00E8C8", 1, "TRUE"]);
+
+    const variables = workbook.addWorksheet("Variables");
+    variables.addRow(["VariableKey", "DisplayName", "GroupKey", "Unit", "DataType", "SortOrder", "DefaultVisible", "Source"]);
+    variables.addRow(["Case", "Case", "performance", "-", "number", 0, "TRUE", "file"]);
+    variables.addRow(["Altitude", "Altitude", "performance", "ft", "number", 1, "TRUE", "file"]);
+    variables.addRow(["IsValid", "Is Valid", "performance", "-", "boolean", 2, "TRUE", "file"]);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const file = new File([buffer], "data.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const result = await parseWorkbookFile(file);
+
+    expect(result.errors).toHaveLength(0);
+    expect(result.model?.groups).toHaveLength(1);
+    expect(result.model?.variables).toHaveLength(3);
+    expect(result.model?.rows).toEqual([{ Case: 1, Altitude: 12000, IsValid: true }]);
   });
 });
