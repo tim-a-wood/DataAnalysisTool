@@ -1,92 +1,77 @@
-# Updated Corrective Action Plan — Review
+# Final Corrective Action Plan — Review
 
-Big improvement over v1 — the plan now reads end-to-end and folds in nearly everything from both prior reviews. Below are the remaining gaps and a few internal issues to fix before locking it in.
+## Verdict
 
-## Strong improvements over v1
+**Mergeable as written.** Every must-fix item from the prior reviews is addressed, every internal contradiction is fixed, and the design/code-quality items not in the plan body are explicitly handled by Section 18's "fix or defer with linked issue" gate.
 
-- Single normalization pipeline (Section 3) — no more double-coercion ambiguity.
-- Tooltip-filter, Axes section, row caps, app grid, sticky-header opacity all promoted to numbered sections.
-- Typed `Partial<Pick<...>>` for grid/cursor patches, layout reconciliation, validation-path cleanup all included.
-- ESLint flat config + Prettier are wired in with exact scripts; no vague "or use existing formatter."
-- `prefers-reduced-motion` and batched variable-selection actions added.
-- Section 17 explicitly requires deferred design/code-quality items to be linked to follow-up issues — this is the right escape hatch.
+## What's resolved since v2
 
-## Must-fix gaps (blocker-level, still not in the plan)
+| v2 issue | v3 resolution |
+|---|---|
+| Variable group header `(N)` count missing | Section 2 — explicit code + acceptance tests |
+| Modal/drawer focus trap missing implementation | Section 11 — full `getFocusableElements` + `trapFocus` helper |
+| Autosave duplication contradicts spec | Section 12.2 — keeps `AppSettings.autosaveLayout`, drops from `AppLayoutState`, persists settings |
+| Sticky-header CSS unbuildable | Section 10.2 — inline style with `hexToRgba(group.color, ...)` |
+| Tooltip filter via `plot1::` prefix hack | Section 8.1 — uses `param.axisIndex` / `param.xAxisIndex` |
+| "First 5,000 rows" ambiguous | Section 10.3 — explicit "by workbook row order" |
+| Reconciliation only at workbook load | Section 12.3 — covers both mount and `loadWorkbook` |
+| ESLint deps unpinned | Section 13 — pins `@eslint/js@9.17.0`, `typescript-eslint@8.18.0` |
+| `noUnusedLocals` / `noUnusedParameters` not flipped | Section 13 — explicit tsconfig change |
+| Vitest jsdom not specified | Section 3 + Section 16 — explicit jsdom requirement |
+| `parseWorkbook.test.ts` doesn't test prod code | Section 3 + 12.4 — round-trip via `XLSX.write` |
+| Escape doesn't close Export dropdown | Section 10.7 — explicit |
+| Conditional performance fix | Section 14.2 — moved to named follow-up issue |
+| Green-check affordance | Section 6 — explicit "implement or defer with linked issue" |
 
-### 1. Variable group header `(N)` count
+## Remaining nits (non-blocking)
 
-Spec §12.7: `▾ Test Inputs (4)`. The plan touches Variables panel in Sections 2 and 10 but never adds the count chip. Should be in Section 2 alongside the protected-Case work, since the count is computed the same way.
-
-### 2. Modal/drawer focus trap implementation
-
-Section 15 manual test says *"Tab repeatedly. Confirm focus remains trapped inside modal,"* but no section in the plan body specifies the implementation. Current code only calls `closeRef.current?.focus()` on mount. Spec §17.2 / §17.3 say *"Focus trap: required."* — that's a hard requirement, not a deferred design item. Add to Section 10 or as a new sub-section: keyboard-cycle Tab/Shift+Tab inside `.modal-box` and `.drawer`, restore focus on close.
-
-## Internal contradictions in the plan
-
-### A. Section 11.2 deviates from the spec data model
-
-Spec §7 defines both `AppLayoutState.autosaveLayout` and `AppSettings.autosaveLayout`, and §18.2 says persistence saves *"layoutState, plotSet, settings."* The plan picks `layoutState.autosaveLayout` as the single source AND removes `settings` from persistence. That contradicts the spec twice over.
-
-**Better resolution**: keep `AppSettings.autosaveLayout` as the source of truth (it's a Settings-modal control), drop the duplicate from `AppLayoutState`, and keep `settings` in the persisted payload. That's a smaller spec deviation and matches where the UI lives.
-
-### B. Section 10.2 sticky-header CSS won't work as written
-
-````css
-background-image: linear-gradient(
-  rgba(var(--group-rgb), 0.18),
-  rgba(var(--group-rgb), 0.18)
-);
-````
-
-This requires `--group-rgb` to be set as a comma-separated triple (e.g. `47, 140, 255`), but the current code stores hex (`#2f8cff`) and uses `hexToRgba`. As written, no CSS variable is ever set, so the gradient renders nothing.
-
-**Fix**: either pre-compute the rgba at the inline-style level — e.g.
+### 1. Focus trap — capture and restore previous focus
+Section 11's acceptance tests say *"Focus returns to Settings button after close"* and the same for Help, but the implementation snippet (`getFocusableElements` / `trapFocus`) only handles the cycle, not the restore. Add to Section 11:
 
 ```ts
-style={{
-  backgroundColor: 'var(--panel-soft)',
-  backgroundImage: `linear-gradient(${hexToRgba(g.color, 0.18)}, ${hexToRgba(g.color, 0.18)})`,
-}}
+// On open
+const previouslyFocused = document.activeElement as HTMLElement | null;
+
+// On close
+previouslyFocused?.focus?.();
 ```
 
-— or add a `setProperty('--group-rgb', '47,140,255')` step at row render. Spell out which.
+Without this the acceptance test for "focus returns to Settings button" won't pass.
 
-### C. Section 8.1 tooltip filter mechanism is hacky
+### 2. Document the intentional spec deviation in Section 12.2
+Spec §7 defines `AppLayoutState.autosaveLayout` and the plan removes it. That's the right call (per the v2 review), but it should be flagged as an **intentional deviation from spec §7** in Section 0 (Scope) or as a note at the top of Section 12.2 — otherwise the next implementer may "fix it back" thinking the spec is authoritative.
 
-The plan suggests *"If ECharts params do not directly expose hovered plot index, assign each series a stable ID prefix: `plot1::`, `plot2::`, `plot3::`."* ECharts axis-trigger params already expose `axisIndex` / `seriesIndex`, and each series has a known `xAxisIndex`. Filter by `param.axisIndex === hoveredAxisIndex` (derived from the first param). The ID-prefix fallback is brittle and shows up in legends.
+### 3. Two small bugs not yet on the plan
+Both are one-line fixes; suggest folding into commit 5 ("header, export filename, copy mismatches") or commit 9, or deferring with linked issues per Section 18:
 
-### D. Section 10.3 "first 5,000 rows" is ambiguous
+- **`Header.handleFile` leaks `isLoading=true` if `parseWorkbookFile` throws.** Wrap in `try { ... } finally { setIsLoading(false); }` (or rely on `loadWorkbook`/`showError` to clear it, but the throw path currently doesn't).
+- **`parseWorkbookFile` catches all SheetJS errors as `"Failed to parse XLSX file."`** Losing the upstream error makes import bugs hard to diagnose. At minimum surface it in dev builds via `console.warn`.
 
-"Table renders first 5,000 rows only" — by workbook order or by Case-ascending order? Spec §13 says the table preserves workbook row order, so it should be **first 5,000 by workbook order**. Plots use all rows up to 20,000 (also order-preserving). Spell this out.
+### 4. Section 17 commit 14 lives in the parent repo
+Commits 1–13 are in `tim-a-wood/DataAnalysisTool`; commit 14 *"Update parent submodule pointer"* lives in `tim-a-wood/tim-a-wood.github.io`. Worth one explicit line in Section 17 so the implementer doesn't accidentally try to commit the submodule bump on the data-tool repo.
 
-### E. Section 11.3 layout reconciliation scope
+### 5. Section 8.1 — settle on one `axisIndex` name in code
+The plan correctly says *"use the ECharts param field that gives the hovered x-axis index"* and offers `axisIndex` or `xAxisIndex` as alternatives. In practice the ECharts `axis`-trigger tooltip params object exposes both: `param.axisIndex` is the index of the axis being triggered, and `param.componentIndex` / `param.seriesIndex` are also available. Pick `axisIndex` and stick with it (or `xAxisIndex` from the series config — but not both in the same function). A note saying *"pick one field, do not switch between them mid-function"* would prevent a `param.axisIndex === param.xAxisIndex` comparison from accidentally being introduced.
 
-The plan says reconcile *"After loadWorkbook(model)"*. But `loadLayout` is also called on app mount (`App.tsx:28-30`) and merges into the already-loaded sample model. If a user's saved `selectedCase` is `200` and the sample only has 1–120, the cursor lands on phantom case 200 until the user imports something. Apply reconciliation both at mount-time `loadLayout` and at `loadWorkbook`.
+## Items legitimately deferred under Section 18
 
-### F. Section 12 ESLint config doesn't pin versions
+These are the design/code-quality items that don't appear in the plan body. Each should get a linked follow-up issue per Section 18:
 
-The flat config imports `@eslint/js` and `typescript-eslint` but the `devDependencies` block only lists `prettier`. Without `@eslint/js` and `typescript-eslint` (and matching versions), `npm run lint` will throw a different error than before. Pin: `@eslint/js@9.17.0`, `typescript-eslint@8.18.0` (both compatible with the existing `eslint@9.17.0` and `typescript@6.0.3`).
-
-### G. Section 14.1 is conditional in a corrective plan
-
-*"If 5,000-row hover is sluggish, implement partial cursor updates."* For a plan whose merge criteria require all blockers fixed, "fix it if you notice" is unusual. Either commit to the side-effect approach now, or move this to a follow-up issue and remove it from Section 16's commit list.
-
-## Smaller cleanups
-
-- **Section 6** correctly fixes `Loaded ·` → `Loaded successfully •`, but the mockup also shows a green checkmark next to the filename. If that affordance is intentional from the mockup, mention it explicitly; otherwise add to the deferred-design list.
-- **Section 16** lists 13 commits; Section 1 lists 13 items but item #12 (*"Run full verification"*) is ops, not code. Renumber to avoid implying a 12-as-code mapping.
-- **Acceptance test in Section 11.4**: *"parseWorkbook tests exercise the same validation functions used in production"* — make it concrete: *"src/tests/parseWorkbook.test.ts imports `parseWorkbookFile` (not `validateSheets`) and exercises it with an in-memory `XLSX.write` output."*
-- **Section 15 keyboard test** has a Tab-cycle check for Settings and Help, but no test that Escape closes the **open Export dropdown** (Section 10.7 spec) — add it.
-- **tsconfig**: now that ESLint will catch unused vars, flip `noUnusedLocals` / `noUnusedParameters` to `true` in `tsconfig.json` so the build (`tsc --noEmit`) also catches them. Add to Section 12.
-- **Vitest environment**: `vite.config.ts` has `test.environment: 'node'`. If any of the new tests need DOM (e.g. for the Variables panel "still shows Test Inputs" assertion), switch to `jsdom` per-file or globally. Note in Section 11 or 12.
+- Variable group title color (mockup uses white + colored dot; current code colors the whole title)
+- Modal entry scale (currently `0.97 → 1`, spec is `0.98 → 1`)
+- Variables row hit-target size (currently ~17 px, recommend 22–24 px)
+- Variable group color-band vs dot saturation mismatch
+- Table row hover affordance too subtle (5% alpha vs `--hover-bg`)
+- Selected-row `!important` in `table.css:9`
+- `Toggle` component inline styles (move to CSS, add `:focus-visible` ring)
+- ColorSwatch using `background` under the native picker swatch
+- Crosshair color `#637385` too subdued — use `--focus-line`
+- Legend swatch `16×3` reads as flat; recommend `24×3`
+- Grid opacity double-multiplication (slider × `splitLine` alpha)
+- Duplicate ARIA: row `role="checkbox"` wrapping `input[type=checkbox]`
+- Plot canvases have no `aria-label` / accessible name
+- Selectors (`getSortedGroups`, `getAllCases`) not memoized at call sites
 
 ## Recommendation
 
-The plan is mergeable after:
-
-1. Section 11.2's spec deviation is resolved (suggest keeping `AppSettings.autosaveLayout`).
-2. Section 10.2's CSS is made buildable.
-3. The group-header `(N)` count is added as an explicit work item.
-4. The focus-trap implementation is added as an explicit work item rather than only a manual-test check.
-
-Everything else above is polish. Once those four items are folded in, the plan is comprehensive enough that the implementer shouldn't need to make design judgment calls — which was the original ambiguity rule in the spec.
+Ship it. Fold the focus-trap restore (item 1) into Section 11 because it's required by the acceptance test there; everything else can land in the same commits or be tracked as follow-ups. Add the line about the spec §7 deviation (item 2) so the next reader doesn't get confused.
