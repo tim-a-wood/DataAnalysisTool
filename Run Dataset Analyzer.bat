@@ -32,7 +32,7 @@ if errorlevel 1 goto node_missing
 echo.
 echo ==^> Using Node.js and npm
 node --version
-npm --version
+call npm --version
 
 if not exist node_modules (
   echo.
