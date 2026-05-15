@@ -39,6 +39,7 @@ const GRID_STYLE_OPTIONS = [
 ];
 
 export function PlotFormattingPanel() {
+  const [search, setSearch] = React.useState("");
   const workbookModel = useAppStore(s => s.workbookModel);
   const plotSet = useAppStore(s => s.plotSet);
   const layoutState = useAppStore(s => s.layoutState);
@@ -59,19 +60,30 @@ export function PlotFormattingPanel() {
     return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.variableKey, series])));
   }, [plotSet]);
 
+  const searchLower = search.toLowerCase().trim();
+
   const groupedSeries = React.useMemo(() => {
     return getOrderedGroups(workbookModel.groups, layoutState.groupOrderKeys)
       .map(group => {
         const variables: { variable: VariableDefinition; series: SeriesConfig }[] = [];
         for (const variable of getVariablesForGroup(workbookModel.variables, group.groupKey)) {
           if (variable.variableKey === "Case" || variable.dataType !== "number") continue;
+          if (
+            searchLower &&
+            !variable.displayName.toLowerCase().includes(searchLower) &&
+            !variable.variableKey.toLowerCase().includes(searchLower) &&
+            !variable.unit.toLowerCase().includes(searchLower) &&
+            !group.displayName.toLowerCase().includes(searchLower)
+          ) {
+            continue;
+          }
           const series = seriesByVariableKey.get(variable.variableKey);
           if (series) variables.push({ variable, series });
         }
         return { group, variables };
       })
-      .filter(group => group.variables.length > 0);
-  }, [workbookModel, layoutState.groupOrderKeys, seriesByVariableKey]);
+      .filter(group => group.variables.length > 0 || !searchLower);
+  }, [workbookModel, layoutState.groupOrderKeys, searchLower, seriesByVariableKey]);
 
   return (
     <div className="plot-panel">
@@ -86,6 +98,19 @@ export function PlotFormattingPanel() {
             </button>
           </AppTooltip>
         </div>
+      </div>
+
+      <div className="search-input-wrapper">
+        <AppTooltip content={tooltipContent.plotVariablesSearch}>
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search plot variables..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            aria-label="Search plot variables"
+          />
+        </AppTooltip>
       </div>
 
       {/* Plot Set Selection */}
@@ -113,7 +138,7 @@ export function PlotFormattingPanel() {
             <span className="group-color-dot" style={{ background: group.color }} />
             <span className="plot-panel-section-title series-group-title">{group.displayName}</span>
           </div>
-          {!plotCollapsedGroupKeys.includes(group.groupKey) && variables.map(({ variable, series: s }) => (
+          {!(plotCollapsedGroupKeys.includes(group.groupKey) && !searchLower) && variables.map(({ variable, series: s }) => (
             <div key={s.id} className="series-row">
               <div className="series-row-top">
                 <AppTooltip content={tooltipContent.seriesVisibility}>
