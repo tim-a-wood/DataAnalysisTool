@@ -37,8 +37,10 @@ call npm --version
 if not exist node_modules (
   echo.
   echo ==^> Installing app dependencies
+  call :configure_npm_ssl
   call npm install
   if errorlevel 1 goto failed
+  call :restore_npm_ssl
 ) else (
   echo.
   echo ==^> Dependencies already installed
@@ -57,6 +59,22 @@ set "PATH=%ProgramFiles%\nodejs;%ProgramFiles(x86)%\nodejs;%LocalAppData%\Progra
 for /f "usebackq delims=" %%P in (`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$machine=[Environment]::GetEnvironmentVariable('Path','Machine'); $user=[Environment]::GetEnvironmentVariable('Path','User'); Write-Output ($machine + ';' + $user)" 2^>nul`) do set "PATH=%%P;%PATH%"
 exit /b 0
 
+:configure_npm_ssl
+for /f "usebackq delims=" %%S in (`call npm config get strict-ssl 2^>nul`) do set "ORIGINAL_NPM_STRICT_SSL=%%S"
+if "%ORIGINAL_NPM_STRICT_SSL%"=="" set "ORIGINAL_NPM_STRICT_SSL=true"
+echo ==^> Temporarily disabling npm strict SSL for dependency install
+call npm config set strict-ssl false
+if errorlevel 1 goto failed
+set "NPM_STRICT_SSL_CHANGED=1"
+exit /b 0
+
+:restore_npm_ssl
+if not "%NPM_STRICT_SSL_CHANGED%"=="1" exit /b 0
+echo ==^> Restoring npm strict SSL setting to %ORIGINAL_NPM_STRICT_SSL%
+call npm config set strict-ssl %ORIGINAL_NPM_STRICT_SSL%
+set "NPM_STRICT_SSL_CHANGED=0"
+exit /b 0
+
 :node_missing
 echo.
 echo Node.js/npm still were not found after install.
@@ -65,6 +83,7 @@ echo Run Dataset Analyzer.bat
 goto failed
 
 :failed
+call :restore_npm_ssl
 echo.
 echo Dataset Analyzer did not start successfully.
 pause
