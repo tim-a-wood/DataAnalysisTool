@@ -319,6 +319,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadLayout: () => {
     const data = loadLayoutData() as { layoutState?: AppLayoutState; plotSet?: PlotSet; settings?: AppSettings } | null;
     if (!data) return;
+    // TODO: Reconcile loaded state against current workbook:
+    // - Validate selectedCase and referenceCase exist in current rows
+    // - Validate visibleVariableKeys exist in current variables
+    // - Validate visibleGroupKeys exist in current groups
+    // - Clamp xRange to valid case range
     set(s => ({
       layoutState: data.layoutState ? { ...s.layoutState, ...data.layoutState } : s.layoutState,
       plotSet: data.plotSet ?? s.plotSet,

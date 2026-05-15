@@ -5,5 +5,5 @@ export const variablesSheetColumns = ["VariableKey","DisplayName","GroupKey","Un
 export const allowedDataTypes = ["number","string","boolean","date"] as const;
 export const allowedVariableSources = ["file","derived"] as const;
 export const maxXlsxFileSizeBytes = 20 * 1024 * 1024;
-export const maxRenderedTableRows = 5000;
-export const maxPlotRows = 20000;
+export const maxRenderedTableRows = 5000; // Warning: displays only first 5000 rows by workbook row order
+export const maxPlotRows = 20000; // Hard limit: plots only support up to 20000 rows
