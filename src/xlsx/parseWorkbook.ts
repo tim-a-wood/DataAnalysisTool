@@ -23,7 +23,10 @@ export async function parseWorkbookFile(file: File): Promise<ParseResult> {
   let wb: XLSX.WorkBook;
   try {
     wb = XLSX.read(buf, { type: "array", cellDates: true });
-  } catch {
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.warn("XLSX parse error:", err);
+    }
     return { model: null, errors: ["Failed to parse XLSX file."] };
   }
 

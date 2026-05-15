@@ -21,10 +21,19 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
     if (!file) return;
     e.target.value = '';
     setIsLoading(true);
-    const result = await parseWorkbookFile(file);
-    if (result.errors.length > 0) showError(result.errors.join(' '));
-    else if (result.model) loadWorkbook(result.model);
-    else setIsLoading(false);
+    let isHandled = false;
+    try {
+      const result = await parseWorkbookFile(file);
+      if (result.errors.length > 0) {
+        showError(result.errors.join(' '));
+        isHandled = true;
+      } else if (result.model) {
+        loadWorkbook(result.model);
+        isHandled = true;
+      }
+    } finally {
+      if (!isHandled) setIsLoading(false);
+    }
   };
 
   const loadedAt = workbookModel.isSample ? null : new Date(workbookModel.loadedAtIso);
