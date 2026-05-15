@@ -83,15 +83,27 @@
 .plot-panel { padding: 4px 0; }
 .plot-panel-section { padding: 8px 10px; border-bottom: 1px solid var(--border-soft); }
 .plot-panel-section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-.plot-structure-controls { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.plot-config-section { background: rgba(13, 24, 34, 0.42); }
+.plot-control-card { padding: 7px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-1); }
+.plot-control-card .select-ctrl { width: 100%; }
+.plot-structure-controls { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
 .plot-clear-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
 .plot-clear-actions .btn { justify-content: center; }
 .plot-series-group-header { display: flex; align-items: center; gap: 6px; margin: -2px -4px 6px; padding: 4px; border-radius: var(--radius-sm); cursor: pointer; user-select: none; }
 .plot-series-group-header:hover { background: var(--hover-bg); }
 .plot-series-group-header .plot-panel-section-title { margin-bottom: 0; flex: 1; }
-.series-row { margin-bottom: 6px; }
-.series-row-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-.series-row-bottom { display: flex; align-items: center; gap: 4px; padding-left: 20px; flex-wrap: wrap; }
+.series-editor { display: flex; flex-direction: column; gap: 7px; padding: 8px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-1); }
+.series-editor-header { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.series-editor-title { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.series-editor-title span:first-child { color: var(--text-0); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.series-editor-title span:last-child { color: var(--text-muted); font-family: var(--font-mono); font-size: 10px; }
+.series-editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.series-editor > .select-ctrl { width: 100%; }
+.series-editor-empty { padding: 8px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--bg-1); color: var(--text-muted); font-size: 11px; }
+.series-row { margin-bottom: 2px; border-radius: var(--radius-sm); cursor: pointer; }
+.series-row:hover { background: var(--hover-bg); }
+.series-row.selected { background: rgba(47, 140, 255, 0.14); box-shadow: inset 2px 0 0 var(--blue); }
+.series-row-top { display: flex; align-items: center; gap: 6px; padding: 3px 4px; }
 .series-group-title { display: flex; align-items: center; gap: 6px; }
 .series-label { font-size: 11px; color: var(--text-1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .series-unit { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); min-width: 22px; text-align: right; }

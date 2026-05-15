@@ -42,6 +42,7 @@ const GRID_STYLE_OPTIONS = [
 
 export function PlotFormattingPanel() {
   const [search, setSearch] = React.useState("");
+  const [selectedSeriesId, setSelectedSeriesId] = React.useState<string | null>(null);
   const workbookModel = useAppStore(s => s.workbookModel);
   const plotSet = useAppStore(s => s.plotSet);
   const layoutState = useAppStore(s => s.layoutState);
@@ -79,6 +80,14 @@ export function PlotFormattingPanel() {
     return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.id, plot.id])));
   }, [plotSet.plots]);
 
+  const variableByKey = React.useMemo(() => {
+    return new Map(workbookModel.variables.map(variable => [variable.variableKey, variable]));
+  }, [workbookModel.variables]);
+
+  const seriesById = React.useMemo(() => {
+    return new Map(plotSet.plots.flatMap(plot => plot.series.map(series => [series.id, series])));
+  }, [plotSet.plots]);
+
   const searchLower = search.toLowerCase().trim();
 
   const groupedSeries = React.useMemo(() => {
@@ -103,6 +112,16 @@ export function PlotFormattingPanel() {
       })
       .filter(group => group.variables.length > 0 || !searchLower);
   }, [workbookModel, layoutState.groupOrderKeys, searchLower, seriesByVariableKey]);
+
+  const firstSeries = groupedSeries.flatMap(group => group.variables.map(item => item.series))[0] ?? null;
+  const selectedSeries = selectedSeriesId ? seriesById.get(selectedSeriesId) : null;
+  const activeSeries = selectedSeries ?? firstSeries;
+  const activeVariable = activeSeries ? variableByKey.get(activeSeries.variableKey) : null;
+
+  React.useEffect(() => {
+    if (!selectedSeriesId && firstSeries) setSelectedSeriesId(firstSeries.id);
+    else if (selectedSeriesId && !seriesById.has(selectedSeriesId)) setSelectedSeriesId(firstSeries?.id ?? null);
+  }, [firstSeries, selectedSeriesId, seriesById]);
 
   return (
     <div className="plot-panel">
@@ -133,14 +152,16 @@ export function PlotFormattingPanel() {
       </div>
 
       {/* Plot Set Selection */}
-      <div className="plot-panel-section">
+      <div className="plot-panel-section plot-config-section">
         <div className="plot-panel-section-title">Plot Set</div>
-        <Select
-          value={plotSet.id}
-          onChange={() => {}}
-          options={[{ value: plotSet.id, label: plotSet.name }]}
-          disabled
-        />
+        <div className="plot-control-card">
+          <Select
+            value={plotSet.id}
+            onChange={() => {}}
+            options={[{ value: plotSet.id, label: plotSet.name }]}
+            disabled
+          />
+        </div>
         <div className="plot-structure-controls">
           <div className="grid-row">
             <span className="grid-row-label">Stacked Plots</span>
@@ -165,6 +186,57 @@ export function PlotFormattingPanel() {
         </div>
       </div>
 
+      <div className="plot-panel-section plot-config-section">
+        <div className="plot-panel-section-title">Selected Variable</div>
+        {activeSeries && activeVariable ? (
+          <div className="series-editor">
+            <div className="series-editor-header">
+              <input
+                type="checkbox"
+                checked={activeSeries.visible}
+                onChange={e => updateSeriesConfig(activeSeries.id, { visible: e.target.checked })}
+                aria-label={`Toggle ${activeSeries.label}`}
+              />
+              <ColorSwatch color={activeSeries.color} onChange={color => updateSeriesConfig(activeSeries.id, { color })} />
+              <div className="series-editor-title">
+                <span>{activeVariable.displayName}</span>
+                <span>{activeVariable.unit}</span>
+              </div>
+            </div>
+            <div className="series-editor-grid">
+              <Select
+                value={activeSeries.plotMode ?? "line"}
+                onChange={v => updateSeriesConfig(activeSeries.id, { plotMode: v as "line" | "samples" })}
+                options={PLOT_MODE_OPTIONS}
+              />
+              <Select
+                value={activeSeries.lineStyle}
+                onChange={v => updateSeriesConfig(activeSeries.id, { lineStyle: v as "solid" | "dashed" | "dotted" })}
+                options={LINE_STYLE_OPTIONS}
+                disabled={(activeSeries.plotMode ?? "line") === "samples"}
+              />
+              <Select
+                value={String(activeSeries.width)}
+                onChange={v => updateSeriesConfig(activeSeries.id, { width: Number(v) })}
+                options={WIDTH_OPTIONS}
+              />
+              <Select
+                value={activeSeries.yAxis}
+                onChange={v => updateSeriesConfig(activeSeries.id, { yAxis: v as "left" | "right" })}
+                options={AXIS_OPTIONS}
+              />
+            </div>
+            <Select
+              value={plotIdBySeriesId.get(activeSeries.id) ?? plotSet.plots[0]?.id ?? ""}
+              onChange={v => moveSeriesToPlot(activeSeries.id, v)}
+              options={plotOptions}
+            />
+          </div>
+        ) : (
+          <div className="series-editor-empty">No plot variable selected.</div>
+        )}
+      </div>
+
       {groupedSeries.map(({ group, variables }) => (
         <div key={group.groupKey} className="plot-panel-section">
           <div
@@ -180,51 +252,26 @@ export function PlotFormattingPanel() {
             <span className="plot-panel-section-title series-group-title">{group.displayName}</span>
           </div>
           {!(plotCollapsedGroupKeys.includes(group.groupKey) && !searchLower) && variables.map(({ variable, series: s }) => (
-            <div key={s.id} className="series-row">
+            <div
+              key={s.id}
+              className={`series-row${activeSeries?.id === s.id ? " selected" : ""}`}
+              onClick={() => setSelectedSeriesId(s.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setSelectedSeriesId(s.id); }}
+            >
               <div className="series-row-top">
                 <AppTooltip content={tooltipContent.seriesVisibility}>
                   <input
                     type="checkbox"
                     checked={s.visible}
                     onChange={e => updateSeriesConfig(s.id, { visible: e.target.checked })}
+                    onClick={e => e.stopPropagation()}
                     aria-label={`Toggle ${s.label}`}
                   />
                 </AppTooltip>
                 <span className="series-label" title={s.label}>{variable.displayName}</span>
                 <span className="series-unit">{variable.unit}</span>
-              </div>
-              <div className="series-row-bottom">
-                <AppTooltip content={tooltipContent.colorSwatch}>
-                  <ColorSwatch color={s.color} onChange={color => updateSeriesConfig(s.id, { color })} />
-                </AppTooltip>
-                <Select
-                  value={s.plotMode ?? "line"}
-                  onChange={v => updateSeriesConfig(s.id, { plotMode: v as "line" | "samples" })}
-                  options={PLOT_MODE_OPTIONS}
-                />
-                <AppTooltip content={tooltipContent.lineStyle}>
-                  <Select
-                    value={s.lineStyle}
-                    onChange={v => updateSeriesConfig(s.id, { lineStyle: v as "solid" | "dashed" | "dotted" })}
-                    options={LINE_STYLE_OPTIONS}
-                    disabled={(s.plotMode ?? "line") === "samples"}
-                  />
-                </AppTooltip>
-                <Select
-                  value={String(s.width)}
-                  onChange={v => updateSeriesConfig(s.id, { width: Number(v) })}
-                  options={WIDTH_OPTIONS}
-                />
-                <Select
-                  value={s.yAxis}
-                  onChange={v => updateSeriesConfig(s.id, { yAxis: v as "left" | "right" })}
-                  options={AXIS_OPTIONS}
-                />
-                <Select
-                  value={plotIdBySeriesId.get(s.id) ?? plotSet.plots[0]?.id ?? ""}
-                  onChange={v => moveSeriesToPlot(s.id, v)}
-                  options={plotOptions}
-                />
               </div>
             </div>
           ))}
