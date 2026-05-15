@@ -9,6 +9,19 @@ import { createPlotSetForWorkbook, ensurePlotSetCoversVariables } from "../model
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
+const PLOT_COLOR_SEQUENCE = [
+  "#2f8cff",
+  "#39b54a",
+  "#ff7a00",
+  "#9b5de5",
+  "#d6a600",
+  "#00b8c8",
+  "#ff4d7d",
+  "#8bd450",
+  "#f06bdc",
+  "#5ec8ff",
+];
+
 function scheduleAutosave(get: () => AppState) {
   if (!get().layoutState.autosaveLayout) return;
   if (autosaveTimer) clearTimeout(autosaveTimer);
@@ -89,6 +102,15 @@ function getDefaultXRange(model: WorkbookModel): { xRange: [number, number]; spa
   const xRange: [number, number] = [cases[0], cases[15]];
   const span = xRange[1] - xRange[0];
   return { xRange, span, zoom: computeZoomSliderValue(span, fw) };
+}
+
+function getNextPlotColor(plotSeries: SeriesConfig[], excludeSeriesId?: string): string {
+  const usedColors = new Set(
+    plotSeries
+      .filter(series => series.visible && series.id !== excludeSeriesId)
+      .map(series => series.color.toLowerCase())
+  );
+  return PLOT_COLOR_SEQUENCE.find(color => !usedColors.has(color.toLowerCase())) ?? PLOT_COLOR_SEQUENCE[0];
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -415,10 +437,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {
         plotSet: {
           ...s.plotSet,
-          plots: plotsWithoutSeries.map(plot => plot.id === targetPlotId
-            ? { ...plot, series: [...plot.series, movingSeries!] }
-            : plot
-          ),
+          plots: plotsWithoutSeries.map(plot => {
+            if (plot.id !== targetPlotId) return plot;
+            const nextSeries = movingSeries!.visible
+              ? { ...movingSeries!, color: getNextPlotColor(plot.series, movingSeries!.id) }
+              : movingSeries!;
+            return { ...plot, series: [...plot.series, nextSeries] };
+          }),
         },
       };
     });
@@ -431,7 +456,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...s.plotSet,
         plots: s.plotSet.plots.map(p => ({
           ...p,
-          series: p.series.map(ser => ser.id === seriesId ? { ...ser, ...patch } : ser),
+          series: p.series.map(ser => {
+            if (ser.id !== seriesId) return ser;
+            const shouldAutoAssignColor = patch.visible === true && !ser.visible && patch.color === undefined;
+            return {
+              ...ser,
+              ...patch,
+              ...(shouldAutoAssignColor ? { color: getNextPlotColor(p.series, ser.id) } : {}),
+            };
+          }),
         })),
       },
     }));
