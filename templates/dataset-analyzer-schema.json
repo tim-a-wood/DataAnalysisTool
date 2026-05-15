@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dataset Analyzer XLSX Workbook Contract",
+  "type": "object",
+  "required": ["Data"],
+  "properties": {
+    "Data": {
+      "type": "array",
+      "description": "Required worksheet. Row 1 contains column headers. Each subsequent row is one case.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["Case"],
+        "properties": {
+          "Case": { "type": "number", "description": "Unique case number used as the default x-axis." }
+        },
+        "additionalProperties": {
+          "description": "Additional columns must match VariableKey values from the Variables worksheet when that worksheet is present."
+        }
+      }
+    },
+    "Groups": {
+      "type": "array",
+      "description": "Optional worksheet defining display groups. If omitted, built-in groups are used.",
+      "items": {
+        "type": "object",
+        "required": ["GroupKey", "DisplayName", "Color", "SortOrder", "DefaultVisible"],
+        "properties": {
+          "GroupKey": { "type": "string" },
+          "DisplayName": { "type": "string" },
+          "Color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "SortOrder": { "type": "number" },
+          "DefaultVisible": { "enum": ["TRUE", "FALSE", true, false] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "Variables": {
+      "type": "array",
+      "description": "Optional worksheet defining variables. If omitted, built-in variables are used.",
+      "items": {
+        "type": "object",
+        "required": ["VariableKey", "DisplayName", "GroupKey", "Unit", "DataType", "SortOrder", "DefaultVisible", "Source"],
+        "properties": {
+          "VariableKey": { "type": "string" },
+          "DisplayName": { "type": "string" },
+          "GroupKey": { "type": "string", "description": "Must match a GroupKey in the Groups worksheet." },
+          "Unit": { "type": "string" },
+          "DataType": { "enum": ["number", "string", "boolean", "date"] },
+          "SortOrder": { "type": "number" },
+          "DefaultVisible": { "enum": ["TRUE", "FALSE", true, false] },
+          "Source": { "enum": ["file", "derived"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "xlsxRequirements": {
+    "fileExtension": ".xlsx",
+    "maxFileSizeBytes": 20971520,
+    "requiredSheets": ["Data"],
+    "optionalSheets": ["Groups", "Variables"],
+    "dataSheetRequiredColumns": ["Case"],
+    "groupsSheetColumns": ["GroupKey", "DisplayName", "Color", "SortOrder", "DefaultVisible"],
+    "variablesSheetColumns": ["VariableKey", "DisplayName", "GroupKey", "Unit", "DataType", "SortOrder", "DefaultVisible", "Source"]
+  }
+}

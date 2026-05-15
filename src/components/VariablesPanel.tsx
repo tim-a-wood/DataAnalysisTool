@@ -9,6 +9,8 @@ export function VariablesPanel() {
   const workbookModel = useAppStore(s => s.workbookModel);
   const layoutState = useAppStore(s => s.layoutState);
   const toggleVariable = useAppStore(s => s.toggleVariable);
+  const selectAllVariables = useAppStore(s => s.selectAllVariables);
+  const clearAllVariables = useAppStore(s => s.clearAllVariables);
   const toggleGroupCollapse = useAppStore(s => s.toggleGroupCollapse);
 
   const [search, setSearch] = useState("");
@@ -36,25 +38,6 @@ export function VariablesPanel() {
     }).filter(g => g.hasMatch || !searchLower);
   }, [sortedGroups, variables, searchLower]);
 
-  const handleSelectAll = () => {
-    const allVarKeys = variables
-      .filter(v => visibleGroupKeys.includes(v.groupKey) && v.variableKey !== "Case")
-      .map(v => v.variableKey);
-    const current = new Set(visibleVariableKeys);
-    for (const k of allVarKeys) current.add(k);
-    // Directly update store
-    allVarKeys.forEach(k => {
-      if (!visibleVariableKeys.includes(k)) toggleVariable(k);
-    });
-  };
-
-  const handleClearAll = () => {
-    // Remove all from visibleVariableKeys (not Case)
-    [...visibleVariableKeys].forEach(k => {
-      if (k !== "Case") toggleVariable(k);
-    });
-  };
-
   const totalVisible = visibleVariableKeys.filter(k => k !== "Case").length;
   const totalAvailable = variables.filter(v => visibleGroupKeys.includes(v.groupKey) && v.variableKey !== "Case").length;
 
@@ -62,6 +45,14 @@ export function VariablesPanel() {
     <div className="sidebar-section" style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div className="sidebar-section-header">
         <span className="sidebar-section-title">Variables</span>
+        <div className="variables-header-actions">
+          <AppTooltip content={tooltipContent.selectAllVariables}>
+            <Button variant="ghost" size="sm" onClick={selectAllVariables}>Select All</Button>
+          </AppTooltip>
+          <AppTooltip content={tooltipContent.clearAllVariables}>
+            <Button variant="ghost" size="sm" onClick={clearAllVariables}>Clear All</Button>
+          </AppTooltip>
+        </div>
       </div>
       <div className="search-input-wrapper">
         <AppTooltip content={tooltipContent.variablesSearch}>
@@ -127,10 +118,10 @@ export function VariablesPanel() {
         <span className="variables-footer-count">{totalVisible} of {totalAvailable} selected</span>
         <div style={{ display: "flex", gap: 4 }}>
           <AppTooltip content={tooltipContent.selectAllVariables}>
-            <Button variant="ghost" size="sm" onClick={handleSelectAll}>All</Button>
+            <Button variant="ghost" size="sm" onClick={selectAllVariables}>All</Button>
           </AppTooltip>
           <AppTooltip content={tooltipContent.clearAllVariables}>
-            <Button variant="ghost" size="sm" onClick={handleClearAll}>Clear</Button>
+            <Button variant="ghost" size="sm" onClick={clearAllVariables}>Clear</Button>
           </AppTooltip>
         </div>
       </div>

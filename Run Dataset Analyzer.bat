@@ -34,11 +34,17 @@ echo ==^> Using Node.js and npm
 node --version
 call npm --version
 
-if not exist node_modules (
+set "DEPS_READY=1"
+if not exist node_modules\react\package.json set "DEPS_READY=0"
+if not exist node_modules\react-dom\package.json set "DEPS_READY=0"
+if not exist node_modules\vite\package.json set "DEPS_READY=0"
+if not exist node_modules\exceljs\package.json set "DEPS_READY=0"
+
+if "%DEPS_READY%"=="0" (
   echo.
   echo ==^> Installing app dependencies
   call :configure_npm_ssl
-  call npm install
+  call npm install --silent --no-audit --fund false --loglevel error
   if errorlevel 1 goto failed
   call :restore_npm_ssl
 ) else (

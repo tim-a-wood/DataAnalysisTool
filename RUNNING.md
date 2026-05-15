@@ -48,3 +48,9 @@ Open the local URL printed in the terminal, usually:
 ```text
 http://127.0.0.1:5173/
 ```
+
+## Workbook Template
+
+Use `templates/dataset-analyzer-template.xlsx` as the starting point for new workbooks.
+
+The import contract is documented in `templates/dataset-analyzer-schema.json`. Workbooks must include a `Data` worksheet with a `Case` column. Optional `Groups` and `Variables` worksheets control grouping, labels, units, data types, and default visibility.

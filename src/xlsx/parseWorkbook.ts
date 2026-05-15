@@ -134,6 +134,7 @@ export async function parseWorkbookFile(file: File): Promise<ParseResult> {
   return {
     model: {
       fileName: file.name,
+      worksheetName: dataSheet.name,
       loadedAtIso: new Date().toISOString(),
       isSample: false,
       groups,

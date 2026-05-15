@@ -28,7 +28,8 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
   };
 
   const loadedAt = workbookModel.isSample ? null : new Date(workbookModel.loadedAtIso);
-  const subtitle = workbookModel.isSample ? 'Sample workbook' : 'Loaded XLSX workbook';
+  const subtitle = workbookModel.isSample ? 'Ready' : 'Loaded XLSX workbook';
+  const worksheetName = workbookModel.worksheetName || 'Unknown worksheet';
 
   return (
     <div className="header-inner">
@@ -49,12 +50,13 @@ export function Header({ onOpenSettings, onOpenHelp }: Props) {
       </AppTooltip>
       <input ref={fileRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={handleFile} />
 
-      {!workbookModel.isSample && loadedAt && (
-        <div className="file-indicator">
-          <span className="file-indicator-name">{workbookModel.fileName}</span>
-          <span className="file-indicator-status">Loaded · {formatDisplayTime(loadedAt)}</span>
-        </div>
-      )}
+      <div className="worksheet-indicator" title={`Worksheet: ${worksheetName}`}>
+        <span className="worksheet-label">Worksheet</span>
+        <span className="worksheet-name">{worksheetName}</span>
+        {!workbookModel.isSample && loadedAt && (
+          <span className="worksheet-file">{workbookModel.fileName} · {formatDisplayTime(loadedAt)}</span>
+        )}
+      </div>
 
       <div className="header-spacer" />
 

@@ -44,6 +44,7 @@ rows[idx24] = { Case: 24, GrossWeight: 71500, PressureAltitude: 3000, OAT: 16.9,
 
 export const sampleWorkbookModel: WorkbookModel = {
   fileName: "sample",
+  worksheetName: "Sample workbook",
   loadedAtIso: new Date().toISOString(),
   isSample: true,
   groups: defaultGroups,

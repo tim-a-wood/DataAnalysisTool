@@ -47,6 +47,8 @@ interface AppState {
   toggleGroup: (groupKey: string) => void;
   reorderGroup: (sourceGroupKey: string, targetGroupKey: string) => void;
   toggleVariable: (variableKey: string) => void;
+  selectAllVariables: () => void;
+  clearAllVariables: () => void;
   toggleGroupCollapse: (groupKey: string) => void;
   togglePlotGroupCollapse: (groupKey: string) => void;
   setSelectedCase: (c: number) => void;
@@ -58,6 +60,7 @@ interface AppState {
   setFocusedPane: (pane: AppLayoutState["focusedPane"]) => void;
   toggleTablePaneCollapse: () => void;
   togglePlotsPaneCollapse: () => void;
+  setTablePaneHeight: (heightPx: number) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   setZoomBySlider: (v: number) => void;
@@ -206,6 +209,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     scheduleAutosave(get);
   },
 
+  selectAllVariables: () => {
+    set(s => {
+      const allVisibleGroupVariables = s.workbookModel.variables
+        .filter(v => v.variableKey !== "Case" && s.layoutState.visibleGroupKeys.includes(v.groupKey))
+        .map(v => v.variableKey);
+      return {
+        layoutState: {
+          ...s.layoutState,
+          visibleVariableKeys: [...new Set([...s.layoutState.visibleVariableKeys, ...allVisibleGroupVariables])],
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  clearAllVariables: () => {
+    set(s => ({
+      layoutState: {
+        ...s.layoutState,
+        visibleVariableKeys: [],
+      },
+    }));
+    scheduleAutosave(get);
+  },
+
   toggleGroupCollapse: (groupKey) => {
     set(s => {
       const ck = s.layoutState.collapsedGroupKeys;
@@ -283,6 +311,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       };
     });
+    scheduleAutosave(get);
+  },
+
+  setTablePaneHeight: (heightPx) => {
+    const nextHeight = Math.max(120, Math.min(560, Math.round(heightPx)));
+    set(s => ({ layoutState: { ...s.layoutState, tablePaneHeightPx: nextHeight } }));
     scheduleAutosave(get);
   },
 

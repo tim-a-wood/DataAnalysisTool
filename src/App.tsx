@@ -29,8 +29,15 @@ export default function App() {
   const setFocusedPane = useAppStore(s => s.setFocusedPane);
   const toggleTablePaneCollapse = useAppStore(s => s.toggleTablePaneCollapse);
   const togglePlotsPaneCollapse = useAppStore(s => s.togglePlotsPaneCollapse);
+  const setTablePaneHeight = useAppStore(s => s.setTablePaneHeight);
   const toggleLeftPanel = useAppStore(s => s.toggleLeftPanel);
   const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
+
+  const gridTemplateRows = layoutState.tableCollapsed
+    ? "52px 0 1fr 38px"
+    : layoutState.plotsCollapsed
+      ? "52px 1fr 0 38px"
+      : `52px ${layoutState.tablePaneHeightPx}px 1fr 38px`;
 
   const appClassName = [
     "app",
@@ -70,7 +77,7 @@ export default function App() {
   }, [previousCase, nextCase, saveLayout]);
 
   return (
-    <div className={appClassName}>
+    <div className={appClassName} style={{ gridTemplateRows }}>
       <div className="app-header">
         <Header
           onOpenSettings={() => setSettingsOpen(true)}
@@ -176,6 +183,46 @@ export default function App() {
         </div>
         <PlotWorkspace />
       </div>
+
+      {!layoutState.focusedPane && !layoutState.tableCollapsed && !layoutState.plotsCollapsed && (
+        <div
+          className="app-pane-divider"
+          role="separator"
+          aria-label="Resize table and plot panes"
+          aria-orientation="horizontal"
+          tabIndex={0}
+          onPointerDown={e => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startHeight = layoutState.tablePaneHeightPx;
+            const maxHeight = Math.max(160, window.innerHeight - 52 - 38 - 180);
+
+            const handlePointerMove = (moveEvent: PointerEvent) => {
+              const nextHeight = Math.max(120, Math.min(maxHeight, startHeight + moveEvent.clientY - startY));
+              setTablePaneHeight(nextHeight);
+            };
+
+            const handlePointerUp = () => {
+              document.body.classList.remove("resizing-panes");
+              window.removeEventListener("pointermove", handlePointerMove);
+              window.removeEventListener("pointerup", handlePointerUp);
+            };
+
+            document.body.classList.add("resizing-panes");
+            window.addEventListener("pointermove", handlePointerMove);
+            window.addEventListener("pointerup", handlePointerUp, { once: true });
+          }}
+          onKeyDown={e => {
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setTablePaneHeight(layoutState.tablePaneHeightPx - 24);
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setTablePaneHeight(layoutState.tablePaneHeightPx + 24);
+            }
+          }}
+        />
+      )}
 
       <div className="app-right-inspector">
         <PlotFormattingPanel />

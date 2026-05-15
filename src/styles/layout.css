@@ -34,6 +34,28 @@ body {
 .app-plots { grid-column: 2; grid-row: 3; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-1); position: relative; }
 .app-right-inspector { grid-column: 3; grid-row: 2/4; border-left: 1px solid var(--border); overflow-y: auto; background: var(--panel); }
 .app-bottom-status { grid-column: 1/4; grid-row: 4; border-top: 1px solid var(--border); background: var(--panel); }
+.app-pane-divider {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+  height: 9px;
+  margin-bottom: -5px;
+  z-index: 18;
+  cursor: row-resize;
+  background: transparent;
+}
+.app-pane-divider::before {
+  content: "";
+  display: block;
+  height: 3px;
+  margin-top: 3px;
+  background: var(--border-strong);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+}
+.app-pane-divider:hover::before,
+.app-pane-divider:focus-visible::before { background: var(--blue); }
+.app-pane-divider:focus-visible { outline: none; }
+body.resizing-panes { cursor: row-resize; user-select: none; }
 
 .app.left-collapsed .app-left-sidebar,
 .app.right-collapsed .app-right-inspector,

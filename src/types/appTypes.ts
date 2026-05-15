@@ -24,6 +24,7 @@ export type DataRow = Record<string, DataValue>;
 
 export interface WorkbookModel {
   fileName: string;
+  worksheetName: string;
   loadedAtIso: string;
   isSample: boolean;
   groups: DataGroup[];
@@ -64,6 +65,7 @@ export interface AppLayoutState {
   focusedPane: "table" | "plots" | null;
   tableCollapsed: boolean;
   plotsCollapsed: boolean;
+  tablePaneHeightPx: number;
   groupOrderKeys: string[];
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];

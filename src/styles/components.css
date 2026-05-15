@@ -23,9 +23,10 @@
 .logo-sub { font-size: 10px; color: var(--text-muted); }
 .logo-divider { width: 1px; height: 26px; background: var(--border); margin: 0 2px; }
 .header-spacer { flex: 1; }
-.file-indicator { font-size: 11px; color: var(--text-2); font-family: var(--font-mono); display: flex; flex-direction: column; gap: 1px; }
-.file-indicator-name { color: var(--text-0); font-weight: 600; }
-.file-indicator-status { color: var(--green); font-size: 10px; }
+.worksheet-indicator { min-width: 170px; display: flex; flex-direction: column; gap: 1px; padding: 2px 10px; border-left: 1px solid var(--border); }
+.worksheet-label { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); line-height: 1; }
+.worksheet-name { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-0); font-size: 16px; font-weight: 800; line-height: 1.1; }
+.worksheet-file { color: var(--green); font-family: var(--font-mono); font-size: 10px; line-height: 1; }
 .stat-chips { display: flex; align-items: center; gap: 5px; margin-left: 6px; }
 .stat-chip { font-size: 11px; font-family: var(--font-mono); background: var(--bg-1); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 2px 7px; display: flex; align-items: center; gap: 4px; }
 .stat-chip-label { color: var(--text-muted); font-size: 10px; }
@@ -66,6 +67,8 @@
 
 /* ─── Variables panel ─── */
 .variable-group-header { display: flex; align-items: center; gap: 6px; padding: 4px 10px; cursor: pointer; user-select: none; border-top: 1px solid var(--border-soft); }
+.variables-header-actions { display: inline-flex; align-items: center; gap: 4px; }
+.variables-header-actions .btn { padding: 2px 5px; font-size: 10px; }
 .variable-group-header:hover { background: var(--hover-bg); }
 .variable-group-chevron { font-size: 12px; color: var(--text-muted); transition: transform 120ms; }
 .variable-group-chevron.collapsed { transform: rotate(-90deg); }
@@ -78,6 +81,36 @@
 .variables-footer { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .variables-footer-count { font-size: 11px; color: var(--text-2); flex: 1; }
 .divider { border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* ─── Bottom metrics ─── */
+.bottom-status-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+.bottom-status-current { color: var(--text-1); font-family: var(--font-mono); font-size: 11px; font-weight: 700; margin-right: 2px; }
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-1);
+  color: var(--text-2);
+  font-size: 10px;
+  font-family: var(--font-ui);
+}
+.metric-chip strong { color: var(--text-0); font-family: var(--font-mono); font-size: 11px; }
+.metric-chip.good { border-left: 3px solid var(--green); }
+.metric-chip.warn { border-left: 3px solid var(--yellow); }
+.metric-chip.bad { border-left: 3px solid var(--red); }
 
 /* ─── Plot panel (right inspector) ─── */
 .plot-panel { padding: 4px 0; }
