@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Zap, Upload, Save, Settings, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { parseWorkbookFile } from '../xlsx/parseWorkbook';

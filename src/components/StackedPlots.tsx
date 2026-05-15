@@ -1,9 +1,9 @@
-import React, { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ECharts } from "echarts";
 import { useAppStore } from "../store/useAppStore";
 import { setEChartsInstance } from "./echartsInstance";
-import { getAllCases, getRowByCase } from "../model/selectors";
+import { getAllCases } from "../model/selectors";
 import { nearestCase } from "../model/xRange";
 import { formatTooltipValue } from "../utils/format";
 import { hexToRgba } from "../utils/color";
@@ -27,7 +27,7 @@ export function StackedPlots() {
   const setHoveredCaseRawX = useAppStore(s => s.setHoveredCaseRawX);
   const setXRange = useAppStore(s => s.setXRange);
 
-  const { rows, variables } = workbookModel;
+  const { rows } = workbookModel;
   const {
     xRange,
     selectedCase,
@@ -83,10 +83,6 @@ export function StackedPlots() {
         axisPointer: { snap: true },
       });
 
-      // Collect left and right series
-      const leftSeries = plot.series.filter(s => s.visible && s.yAxis === "left");
-      const rightSeries = plot.series.filter(s => s.visible && s.yAxis === "right");
-      const hasRight = rightSeries.length > 0;
 
       // Left Y axis
       yAxes.push({
@@ -205,12 +201,15 @@ export function StackedPlots() {
         textStyle: { color: "#c5d0dc", fontSize: 11, fontFamily: "JetBrains Mono, monospace" },
         formatter: (params: unknown) => {
           if (!Array.isArray(params) || params.length === 0) return "";
-          const caseVal = (params[0] as { data: [number, number] }).data[0];
+          const allParams = params as { seriesName: string; color: string; data: [number, number]; xAxisIndex?: number }[];
+          const xAxisIndex = allParams[0].xAxisIndex ?? 0;
+          const filteredParams = allParams.filter(p => (p.xAxisIndex ?? 0) === xAxisIndex);
+          if (filteredParams.length === 0) return "";
+          const caseVal = filteredParams[0].data[0];
           const displayCase = snapToData ? nearestCase(caseVal, allCases) : caseVal;
           let html = `<div style="font-weight:600;margin-bottom:4px;">Case # ${displayCase}</div>`;
-          for (const p of params as { seriesName: string; color: string; data: [number, number] }[]) {
+          for (const p of filteredParams) {
             const y = p.data[1];
-            // Find the variable key from series name
             const s = plotSet.plots.flatMap(pl => pl.series).find(s => s.label === p.seriesName);
             const formatted = s ? formatTooltipValue(y, s.variableKey) : (y !== null && y !== undefined ? String(y) : "-");
             html += `<div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:3px;display:inline-block;background:${p.color};border-radius:2px;"></span><span style="color:#8797a7;">${p.seriesName}</span><span style="margin-left:auto;padding-left:12px;">${formatted}</span></div>`;
@@ -250,7 +249,7 @@ export function StackedPlots() {
     setHoveredCaseRawX(null);
   }, [setHoveredCase, setHoveredCaseRawX]);
 
-  const handleDataZoom = useCallback((params: unknown) => {
+  const handleDataZoom = useCallback((_params: unknown) => {
     const inst = echartsRef.current?.getEchartsInstance();
     if (!inst) return;
     const opt = inst.getOption() as { xAxis?: { min?: number; max?: number }[] };

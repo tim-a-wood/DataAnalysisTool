@@ -1,4 +1,3 @@
-import React from "react";
 import { StackedPlots } from "./StackedPlots";
 import { XAxisNavigation } from "./XAxisNavigation";
 

@@ -77,7 +77,6 @@ export interface AppLayoutState {
   showCrosshair: boolean;
   snapToData: boolean;
   showTooltips: boolean;
-  autosaveLayout: boolean;
 }
 
 export interface AppSettings {

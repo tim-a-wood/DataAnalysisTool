@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { useAppStore } from "../store/useAppStore";
 import { getAllCases } from "../model/selectors";

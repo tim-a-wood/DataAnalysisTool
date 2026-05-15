@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { getVisibleGroups, getVisibleVariablesForGroup } from "../model/selectors";
 import { formatTableValue } from "../utils/format";

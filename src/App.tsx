@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "./store/useAppStore";
 import { Header } from "./components/Header";
 import { DataGroupsPanel } from "./components/DataGroupsPanel";

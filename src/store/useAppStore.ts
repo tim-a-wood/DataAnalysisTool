@@ -10,7 +10,7 @@ import { getAllCases } from "../model/selectors";
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleAutosave(get: () => AppState) {
-  if (!get().layoutState.autosaveLayout) return;
+  if (!get().settings.autosaveLayout) return;
   if (autosaveTimer) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
     const s = get();
@@ -279,7 +279,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setAutosaveLayout: (enabled) => {
-    set(s => ({ layoutState: { ...s.layoutState, autosaveLayout: enabled }, settings: { ...s.settings, autosaveLayout: enabled } }));
+    set(s => ({ settings: { ...s.settings, autosaveLayout: enabled } }));
     get().showToast("Settings updated.");
   },
 

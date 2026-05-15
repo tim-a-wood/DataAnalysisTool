@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { getRowByCase } from "../model/selectors";
 import { formatTooltipValue } from "../utils/format";

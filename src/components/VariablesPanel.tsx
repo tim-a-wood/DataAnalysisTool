@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { getSortedGroups } from "../model/selectors";
 import { AppTooltip } from "./AppTooltip";
@@ -32,7 +32,8 @@ export function VariablesPanel() {
             group.displayName.toLowerCase().includes(searchLower)
           )
         : vars;
-      return { group, vars: filtered, hasMatch: filtered.length > 0 };
+      const totalCount = vars.length;
+      return { group, vars: filtered, hasMatch: filtered.length > 0, totalCount };
     }).filter(g => g.hasMatch || !searchLower);
   }, [sortedGroups, variables, searchLower]);
 
@@ -76,7 +77,7 @@ export function VariablesPanel() {
         </AppTooltip>
       </div>
       <div className="sidebar-scroll">
-        {groupedVariables.map(({ group, vars }) => {
+        {groupedVariables.map(({ group, vars, totalCount }) => {
           const isCollapsed = collapsedGroupKeys.includes(group.groupKey) && !searchLower;
           return (
             <div key={group.groupKey}>
@@ -90,7 +91,7 @@ export function VariablesPanel() {
               >
                 <span className={`variable-group-chevron${isCollapsed ? " collapsed" : ""}`}>▾</span>
                 <span className="group-color-dot" style={{ background: group.color }} />
-                <span className="variable-group-title" style={{ color: group.color }}>{group.displayName}</span>
+                <span className="variable-group-title" style={{ color: group.color }}>{group.displayName} ({totalCount})</span>
               </div>
               {!isCollapsed && vars.map(v => {
                 const isCase = v.variableKey === "Case";

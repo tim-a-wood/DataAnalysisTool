@@ -19,5 +19,4 @@ export const defaultLayout: AppLayoutState = {
   showCrosshair: true,
   snapToData: true,
   showTooltips: true,
-  autosaveLayout: true,
 };

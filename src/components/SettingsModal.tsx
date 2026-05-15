@@ -1,29 +1,46 @@
-import React, { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Toggle } from './Toggle';
 import { useAppStore } from '../store/useAppStore';
+import { getFocusableElements, trapFocus } from '../utils/focusTrap';
 
 interface Props {
   onClose: () => void;
 }
 
 export function SettingsModal({ onClose }: Props) {
-  const autosaveLayout = useAppStore(s => s.layoutState.autosaveLayout);
+  const autosaveLayout = useAppStore(s => s.settings.autosaveLayout);
   const setAutosaveLayout = useAppStore(s => s.setAutosaveLayout);
   const resetLayout = useAppStore(s => s.resetLayout);
   const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => { closeRef.current?.focus(); }, []);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        previouslyFocused.current?.focus?.();
+      }
+      if (modalRef.current) {
+        const focusable = getFocusableElements(modalRef.current);
+        trapFocus(e, focusable);
+      }
+    };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      previouslyFocused.current?.focus?.();
+    };
   }, [onClose]);
 
   return (
     <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div ref={modalRef} className="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="modal-title" id="settings-title">Settings</div>
         <div className="modal-row">
           <span>Theme</span>

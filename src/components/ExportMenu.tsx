@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppStore } from '../store/useAppStore';
@@ -18,11 +18,20 @@ export function ExportMenu() {
   const settings = useAppStore(s => s.settings);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const mouseHandler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    if (open) {
+      document.addEventListener('mousedown', mouseHandler);
+      document.addEventListener('keydown', keyHandler);
+    }
+    return () => {
+      document.removeEventListener('mousedown', mouseHandler);
+      document.removeEventListener('keydown', keyHandler);
+    };
   }, [open]);
 
   const ts = () => formatTimestamp(new Date());
