@@ -62,6 +62,8 @@ export interface AppLayoutState {
   leftPanelCollapsed: boolean;
   rightPanelCollapsed: boolean;
   focusedPane: "table" | "plots" | null;
+  tableCollapsed: boolean;
+  plotsCollapsed: boolean;
   groupOrderKeys: string[];
   visibleGroupKeys: string[];
   visibleVariableKeys: string[];

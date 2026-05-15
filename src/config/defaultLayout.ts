@@ -3,6 +3,8 @@ export const defaultLayout: AppLayoutState = {
   leftPanelCollapsed: false,
   rightPanelCollapsed: false,
   focusedPane: null,
+  tableCollapsed: false,
+  plotsCollapsed: false,
   groupOrderKeys: ["test_inputs","expected_outputs","actual_outputs","tolerances","absolute_error","relative_error","inputs","logged_data"],
   visibleGroupKeys: ["test_inputs","expected_outputs","actual_outputs","tolerances","absolute_error","relative_error","inputs","logged_data"],
   visibleVariableKeys: ["GrossWeight","PressureAltitude","OAT","VR_Exp","V2_Exp","TODist_Exp","VR_Act","V2_Act","TODist_Act","VR_Tol","V2_Tol","TODist_Tol","VR_AbsErr","V2_AbsErr","TODist_AbsErr","VR_RelErr","V2_RelErr","TODist_RelErr","FlapsSetting","RunwayCondition","AntiIce","Notes","PassFail"],

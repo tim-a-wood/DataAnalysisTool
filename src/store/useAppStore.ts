@@ -56,6 +56,8 @@ interface AppState {
   setReferenceCase: (c: number | null) => void;
   setXRange: (range: [number, number]) => void;
   setFocusedPane: (pane: AppLayoutState["focusedPane"]) => void;
+  toggleTablePaneCollapse: () => void;
+  togglePlotsPaneCollapse: () => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   setZoomBySlider: (v: number) => void;
@@ -247,9 +249,41 @@ export const useAppStore = create<AppState>((set, get) => ({
       layoutState: {
         ...s.layoutState,
         focusedPane: pane,
+        tableCollapsed: false,
+        plotsCollapsed: false,
         ...(pane ? { leftPanelCollapsed: true, rightPanelCollapsed: true } : {}),
       },
     }));
+  },
+
+  toggleTablePaneCollapse: () => {
+    set(s => {
+      const nextCollapsed = !s.layoutState.tableCollapsed;
+      return {
+        layoutState: {
+          ...s.layoutState,
+          focusedPane: null,
+          tableCollapsed: nextCollapsed,
+          plotsCollapsed: false,
+        },
+      };
+    });
+    scheduleAutosave(get);
+  },
+
+  togglePlotsPaneCollapse: () => {
+    set(s => {
+      const nextCollapsed = !s.layoutState.plotsCollapsed;
+      return {
+        layoutState: {
+          ...s.layoutState,
+          focusedPane: null,
+          tableCollapsed: false,
+          plotsCollapsed: nextCollapsed,
+        },
+      };
+    });
+    scheduleAutosave(get);
   },
 
   toggleLeftPanel: () => {

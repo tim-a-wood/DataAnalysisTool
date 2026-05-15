@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Maximize2, Minimize2, PanelLeftOpen, PanelRightOpen } from "lucide-react";
+import { ChevronDown, ChevronUp, Maximize2, Minimize2, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { useAppStore } from "./store/useAppStore";
 import { Header } from "./components/Header";
 import { DataGroupsPanel } from "./components/DataGroupsPanel";
@@ -27,6 +27,8 @@ export default function App() {
   const saveLayout = useAppStore(s => s.saveLayout);
   const layoutState = useAppStore(s => s.layoutState);
   const setFocusedPane = useAppStore(s => s.setFocusedPane);
+  const toggleTablePaneCollapse = useAppStore(s => s.toggleTablePaneCollapse);
+  const togglePlotsPaneCollapse = useAppStore(s => s.togglePlotsPaneCollapse);
   const toggleLeftPanel = useAppStore(s => s.toggleLeftPanel);
   const toggleRightPanel = useAppStore(s => s.toggleRightPanel);
 
@@ -36,6 +38,8 @@ export default function App() {
     layoutState.rightPanelCollapsed ? "right-collapsed" : "",
     layoutState.focusedPane === "table" ? "focus-table" : "",
     layoutState.focusedPane === "plots" ? "focus-plots" : "",
+    layoutState.tableCollapsed ? "table-collapsed" : "",
+    layoutState.plotsCollapsed ? "plots-collapsed" : "",
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
@@ -108,26 +112,68 @@ export default function App() {
       </div>
 
       <div className="app-table">
-        <button
-          className="pane-action"
-          onClick={() => setFocusedPane(layoutState.focusedPane === "table" ? null : "table")}
-          aria-label={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
-          title={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
-        >
-          {layoutState.focusedPane === "table" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-        </button>
+        <div className="pane-action-group pane-action-group-top">
+          <button
+            className="pane-action"
+            onClick={toggleTablePaneCollapse}
+            aria-label="Collapse table upward"
+            title="Collapse table upward"
+          >
+            <ChevronUp size={13} />
+          </button>
+          <button
+            className="pane-action"
+            onClick={() => setFocusedPane(layoutState.focusedPane === "table" ? null : "table")}
+            aria-label={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
+            title={layoutState.focusedPane === "table" ? "Restore split view" : "Maximize table"}
+          >
+            {layoutState.focusedPane === "table" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
+        </div>
         <GroupedDataTable />
+        {layoutState.plotsCollapsed && (
+          <button
+            className="pane-restore pane-restore-plots"
+            onClick={togglePlotsPaneCollapse}
+            aria-label="Show plots"
+            title="Show plots"
+          >
+            <ChevronUp size={14} />
+            <span>Show Plots</span>
+          </button>
+        )}
       </div>
 
       <div className="app-plots">
-        <button
-          className="pane-action"
-          onClick={() => setFocusedPane(layoutState.focusedPane === "plots" ? null : "plots")}
-          aria-label={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
-          title={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
-        >
-          {layoutState.focusedPane === "plots" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-        </button>
+        {layoutState.tableCollapsed && (
+          <button
+            className="pane-restore pane-restore-table"
+            onClick={toggleTablePaneCollapse}
+            aria-label="Show table"
+            title="Show table"
+          >
+            <ChevronDown size={14} />
+            <span>Show Table</span>
+          </button>
+        )}
+        <div className="pane-action-group pane-action-group-bottom">
+          <button
+            className="pane-action"
+            onClick={togglePlotsPaneCollapse}
+            aria-label="Collapse plots downward"
+            title="Collapse plots downward"
+          >
+            <ChevronDown size={13} />
+          </button>
+          <button
+            className="pane-action"
+            onClick={() => setFocusedPane(layoutState.focusedPane === "plots" ? null : "plots")}
+            aria-label={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
+            title={layoutState.focusedPane === "plots" ? "Restore split view" : "Maximize plots"}
+          >
+            {layoutState.focusedPane === "plots" ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
+        </div>
         <PlotWorkspace />
       </div>
 
