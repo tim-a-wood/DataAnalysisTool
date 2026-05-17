@@ -1,7 +1,7 @@
 import type { AppLayoutState } from "../types/appTypes";
 export const defaultLayout: AppLayoutState = {
   leftPanelCollapsed: false,
-  rightPanelCollapsed: false,
+  rightPanelCollapsed: true,
   focusedPane: null,
   tableCollapsed: false,
   plotsCollapsed: false,
